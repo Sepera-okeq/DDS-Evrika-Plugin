@@ -68,7 +68,10 @@ class DDSEvrikaPlugin(Extension):
         if not input_file:
             return
 
-        format_dialog = self.createFormatDialog([self.translations["select_format"]], self.translations["select_format"])
+        # Список возможных форматов для импорта
+        format_options = ["png", "jpeg", "bmp", "tiff"]
+
+        format_dialog = self.createFormatImportDialog(format_options, self.translations["select_format"])
         if format_dialog.exec_() == QDialog.Accepted:
             selected_format = format_dialog.import_format.currentText()
             temp_directory_location = os.path.join(os.path.dirname(__file__), 'temp_dds')
@@ -90,7 +93,7 @@ class DDSEvrikaPlugin(Extension):
 
     def exportDDS(self):
         """
-        Export document to DDS format
+        Export document to DDS format with advanced compression options.
         """
         doc = Krita.instance().activeDocument()
         if not doc:
@@ -101,27 +104,52 @@ class DDSEvrikaPlugin(Extension):
             return
         if not save_file.lower().endswith('.dds'):
             save_file += ".dds"
-            
-        format_dialog = self.createFormatDialog([self.translations["compression_format"]], self.translations["compression_format"])
+
+        # Предоставляем пользователю выбор формата и параметров сжатия
+        format_options = ["png", "tiff", "bmp"]  # Доступные форматы для экспорта (кроме DDS)
+        format_dialog = self.createFormatExportDialog(format_options, self.translations["compression_format"])
+
         if format_dialog.exec_() == QDialog.Accepted:
-            compression_format = format_dialog.import_format.currentText()
+            selected_format = format_dialog.import_format.currentText()
+            compression_format = format_dialog.compression_format.currentText()
+            mipmap_levels = format_dialog.mipmaps_combo.currentText()
+
             temp_directory_location = os.path.join(os.path.dirname(__file__), 'temp_dds_export')
             if not os.path.isdir(temp_directory_location):
                 os.makedirs(temp_directory_location)
+            
+            # Экспорт документа во временный PNG для конвертации через ImageMagick
             temp_png_file = os.path.join(temp_directory_location, "temp_export.png")
             doc.saveAs(temp_png_file)
+
+            # Формируем команду для ImageMagick
             imagick_path = os.path.join(os.path.dirname(__file__), 'resources', 'magick.exe') if platform == "win32" else 'magick'
-            args = [imagick_path, temp_png_file, '-define', f'dds:compression={compression_format.lower()}', save_file]
-            
+
+            # Базовые аргументы
+            args = [imagick_path, temp_png_file]
+
+            # Спецификация для сжатия DDS (dxt1, dxt3, dxt5 etc.)
+            if compression_format != "none":  # Если выбран формат, отличный от "none"
+                args.extend(['-define', f'dds:compression={compression_format.lower()}'])
+
+            # Опция для мип-карт
+            if mipmap_levels != "Auto":
+                args.extend(['-define', f'dds:mipmaps={mipmap_levels}'])
+
+            # Финальный аргумент: назначение выходного файла
+            args.append(save_file)
+
+            # Запуск команды
             try:
                 subprocess.run(args, check=True)
                 self.showMessage(self.translations["file_saved"] + save_file)
             except subprocess.CalledProcessError as e:
                 self.showError(self.translations["error_processing"] + str(e))
 
+            # Очистка временной директории
             shutil.rmtree(temp_directory_location)
 
-    def createFormatDialog(self, format_options, title):
+    def createFormatImportDialog(self, format_options, title):
         """
         Creates a dialog for selecting formats.
         """
@@ -136,7 +164,7 @@ class DDSEvrikaPlugin(Extension):
         vbox_left.addWidget(format_label)
         
         import_format = QComboBox()
-        import_format.addItems(format_options)
+        import_format.addItems(format_options)  # Добавляем элементы в выпадающий список
         import_format.setCurrentIndex(0)
         vbox_right.addWidget(import_format)
 
@@ -153,6 +181,68 @@ class DDSEvrikaPlugin(Extension):
         cancel_button.clicked.connect(dialog.reject)
 
         dialog.import_format = import_format
+
+        return dialog
+
+    def createFormatExportDialog(self, format_options, title):
+        """
+        Creates a dialog for selecting formats and compression settings.
+        """
+        dialog = QDialog()
+        dialog.setWindowTitle(title)
+
+        grid = QGridLayout(dialog)
+        vbox_left = QVBoxLayout()
+        vbox_right = QVBoxLayout()
+
+        # Метка для выбора формата
+        format_label = QLabel(self.translations["select_format"])
+        vbox_left.addWidget(format_label)
+
+        # Выпадающий список для выбора формата
+        import_format = QComboBox()
+        import_format.addItems(format_options)
+        import_format.setCurrentIndex(0)
+        vbox_right.addWidget(import_format)
+
+        # Метка для выбора сжатия
+        compression_label = QLabel(self.translations["compression_format"])
+        vbox_left.addWidget(compression_label)
+
+        # Список опций сжатия DDS
+        compression_options = ["dxt1", "dxt3", "dxt5", "bc7", "none"]
+        compression_format = QComboBox()
+        compression_format.addItems(compression_options)  # Выбор формата сжатия
+        compression_format.setCurrentIndex(0)
+        vbox_right.addWidget(compression_format)
+
+        # Опция для использования мип-карт
+        mipmaps_label = QLabel("Mipmap levels")
+        vbox_left.addWidget(mipmaps_label)
+        
+        mipmaps_combo = QComboBox()
+        mipmaps_combo.addItems(["Auto", "1", "2", "3", "4", "5"])  # Example mipmap levels
+        mipmaps_combo.setCurrentIndex(0)
+        vbox_right.addWidget(mipmaps_combo)
+
+        # Кнопки подтверждения и отмены
+        confirm_button = QPushButton(self.translations["ok"])
+        vbox_right.addWidget(confirm_button)
+
+        cancel_button = QPushButton(self.translations["cancel"])
+        vbox_left.addWidget(cancel_button)
+
+        # Добавление layout в диалог
+        grid.addLayout(vbox_left, 0, 0)
+        grid.addLayout(vbox_right, 0, 1)
+
+        confirm_button.clicked.connect(dialog.accept)
+        cancel_button.clicked.connect(dialog.reject)
+
+        # Передаем данные доступа к выбранным форматам и параметрам
+        dialog.import_format = import_format
+        dialog.compression_format = compression_format
+        dialog.mipmaps_combo = mipmaps_combo
 
         return dialog
 
