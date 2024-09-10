@@ -34,7 +34,20 @@ With **DDSEvrikaPlugin**, you can:
 
 ## Install
 
-You can download the current version of the plugin [here](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest).
+1. **Download plugin**
+   - You can download the current version of the plugin [here](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest).
+
+2. **Installing the plugin**:
+   - Extract or clone the plugin into Krita’s `pykrita` folder. You can find this folder in different locations depending on your OS:
+     - **Windows**: `C:\Users\<YourUserName>\AppData\Roaming\krita\pykrita\`
+     - **Linux**: `~/.local/share/krita/pykrita/`
+     - **MacOS**: `~/Library/Application Support/krita/pykrita/`
+  
+3. **Restart Krita**:
+   - After installing the plugin, restart Krita to activate the plugin.
+
+4. **Verify the Installation**:
+   - Go to `Tools -> Scripts -> DDSEvrikaPlugin` to see the new options under the tools menu.
 
 ---
 
@@ -49,24 +62,12 @@ You can download the current version of the plugin [here](https://github.com/Sep
 
 ## Develop
 
-1. **Download the plugin**:
+1. **Clone repo**:
    - Clone this repository or download it as a ZIP.
 
 2. **Install ImageMagick**:
    - Windows/Linux/MacOS: Download and install ImageMagick from the [official website](https://imagemagick.org/script/download.php).
    - Drop in path installing plugin, t.e `installing_plugin\dds_evrika_plugin\resources`
-
-3. **Installing the plugin**:
-   - Extract or clone the plugin into Krita’s `pykrita` folder. You can find this folder in different locations depending on your OS:
-     - **Windows**: `C:\Users\<YourUserName>\AppData\Roaming\krita\pykrita\`
-     - **Linux**: `~/.local/share/krita/pykrita/`
-     - **MacOS**: `~/Library/Application Support/krita/pykrita/`
-  
-4. **Restart Krita**:
-   - After installing the plugin, restart Krita to activate the plugin.
-
-5. **Verify the Installation**:
-   - Go to `Tools -> Scripts -> DDSEvrikaPlugin` to see the new options under the tools menu.
 
 ---
 
@@ -132,7 +133,7 @@ If you wish to contribute:
 
 1. Fork the repository.
 2. Create a new branch: `git checkout -b feature-xyz`
-3. Commit your changes: `git commit -m "Add some feature"`
+3. Commit your changes: `git commit -m "feat: Add some feature"`
 4. Push to the branch: `git push origin feature-xyz`
 5. Submit a pull request.
 
