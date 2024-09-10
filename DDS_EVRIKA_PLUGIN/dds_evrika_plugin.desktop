@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=Krita/PythonPlugin
+Author=sepera_okeq
+X-KDE-Library=dds_evrika_plugin
+X-Python-2-Compatible=false
+X-Krita-Manual=Manual.html
+Name=DDS Evrika Plugin
+Comment=A plugin that enables full support DDS format.

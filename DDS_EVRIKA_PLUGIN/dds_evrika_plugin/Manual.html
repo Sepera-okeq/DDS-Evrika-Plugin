@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krita DDS Evrika Plugin Documentation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            margin: 20px;
+            max-width: 800px;
+        }
+        p {
+            margin-bottom: 1em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Krita DDS Evrika Plugin - User Manual</h1>
+    </header>
+
+    <main>
+        <section id="introduction">
+            <h2>Introduction</h2>
+            <p>The DDS Evrika Plugin is an extension designed for <strong>Krita</strong>, enabling users to import and export DDS image files using ImageMagick. DDS (DirectDraw Surface) is a popular format for storing textures and images optimized for real-time rendering, often used in games and 3D applications.</p>
+        </section>
+
+        <section id="installation">
+            <h2>Installation</h2>
+            <ol>
+                <li>Download the plugin files.</li>
+                <li>Copy the plugin directory to Krita's plugin folder:</li>
+                <ul>
+                    <li>Windows: <code>C:\Users\<YourUser>\AppData\Roaming\krita\pykrita</code></li>
+                    <li>Linux: <code>~/.local/share/krita/pykrita</code></li>
+                </ul>
+                <li>Restart Krita.</li>
+                <li>Go to the <em>"Tools > Scripts"</em> menu and enable <strong>DDS Evrika Plugin</strong>.</li>
+            </ol>
+        </section>
+
+        <section id="usage">
+            <h2>Usage</h2>
+            <h3>Importing DDS Files</h3>
+            <ol>
+                <li>Go to <strong>Tools > Scripts > Import DDS</strong>.</li>
+                <li>Select the DDS file you want to import.</li>
+                <li>Select the target format for conversion (TGA, PNG, etc.).</li>
+                <li>The image will open within Krita after successful conversion.</li>
+            </ol>
+
+            <h3>Exporting DDS Files</h3>
+            <ol>
+                <li>Go to <strong>Tools > Scripts > Export to DDS</strong>.</li>
+                <li>Select the compression format for the DDS file (DXT1, DXT3, DXT5).</li>
+                <li>The image will be exported and saved as a DDS file.</li>
+            </ol>
+        </section>
+
+        <section id="troubleshooting">
+            <h2>Troubleshooting</h2>
+            <p>If you encounter issues with the conversion process:</p>
+            <ul>
+                <li>Ensure ImageMagick is properly installed in the "resources" folder.</li>
+                <li>Check the console output for error messages related to the file conversion process.</li>
+                <li>If Krita crashes or freezes, check the system resources and ensure there’s sufficient memory available.</li>
+            </ul>
+        </section>
+
+        <section id="support">
+            <h2>Support</h2>
+            <p>For further assistance, visit the official <a href="https://krita.org/en/help/">Krita Help page</a>, or contact the plugin author at <em>support@example.com</em>.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 DDS Evrika Plugin - by sepera_okeq </p>
+    </footer>
+</body>
+</html>
