@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,20 +12,26 @@
             margin: 20px;
             max-width: 800px;
         }
+
         p {
             margin-bottom: 1em;
         }
     </style>
 </head>
+
 <body>
     <header>
-        <h1>Krita DDS Evrika Plugin - User Manual</h1>
+        <h1>Krita DDS Evrika Plugin - User Manual (Updated 1.1)</h1>
     </header>
 
     <main>
         <section id="introduction">
             <h2>Introduction</h2>
-            <p>The DDS Evrika Plugin is an extension designed for <strong>Krita</strong>, enabling users to import and export DDS image files using ImageMagick. DDS (DirectDraw Surface) is a popular format for storing textures and images optimized for real-time rendering, often used in games and 3D applications.</p>
+            <p>The DDS Evrika Plugin is an extension for <strong>Krita</strong>, enabling users to import and export DDS
+                image files using ImageMagick. DDS (DirectDraw Surface) is a popular format for storing textures and
+                images optimized for real-time rendering, often used in video games and 3D applications.</p>
+            <p>This updated version introduces support for customizable import, export settings, mipmap levels, and
+                integration with Krita's scripting interface for a more flexible workflow.</p>
         </section>
 
         <section id="installation">
@@ -36,47 +43,86 @@
                     <li>Windows: <code>C:\Users\<YourUser>\AppData\Roaming\krita\pykrita</code></li>
                     <li>Linux: <code>~/.local/share/krita/pykrita</code></li>
                 </ul>
-                <li>Restart Krita.</li>
-                <li>Go to the <em>"Tools > Scripts"</em> menu and enable <strong>DDS Evrika Plugin</strong>.</li>
+                <li>Ensure that ImageMagick is installed and available in the "resources" folder of the plugin.</li>
+                <li>Restart Krita after copying the plugin files.</li>
+                <li>Activate the plugin from the Krita interface via <em>"Tools > Scripts > Evrika DDS Plugin".</em>
+                </li>
             </ol>
         </section>
 
         <section id="usage">
             <h2>Usage</h2>
+
             <h3>Importing DDS Files</h3>
+            <p>To import a DDS file:</p>
             <ol>
-                <li>Go to <strong>Tools > Scripts > Import DDS</strong>.</li>
-                <li>Select the DDS file you want to import.</li>
-                <li>Select the target format for conversion (TGA, PNG, etc.).</li>
-                <li>The image will open within Krita after successful conversion.</li>
+                <li>Navigate to <strong>Tools > Scripts > Import DDS</strong>.</li>
+                <li>Select the DDS file you want to open.</li>
+                <li>The file will be converted to a chosen format such as PNG or TGA (based on your settings).</li>
+                <li>The image will open in Krita after conversion.</li>
+            </ol>
+
+            <h3>Importing DDS Files with Custom Format</h3>
+            <p>The plugin allows importing DDS files and converting them to other formats directly.</p>
+            <ol>
+                <li>Go to <strong>Tools > Scripts > Import DDS as...</strong>.</li>
+                <li>Select the conversion format in the dialog (e.g., PNG, TIFF, BMP).</li>
+                <li>The selected format will be applied for the conversion process.</li>
             </ol>
 
             <h3>Exporting DDS Files</h3>
+            <p>Exporting is straightforward with options for selecting compression and mipmap levels:</p>
             <ol>
-                <li>Go to <strong>Tools > Scripts > Export to DDS</strong>.</li>
-                <li>Select the compression format for the DDS file (DXT1, DXT3, DXT5).</li>
-                <li>The image will be exported and saved as a DDS file.</li>
+                <li>Navigate to <strong>Tools > Scripts > Export DDS</strong>.</li>
+                <li>Select the compression type (DXT1, DXT3, DXT5, BC7) and set the Mipmap Levels (Auto, 1-5).</li>
+                <li>Export the file using the DDS format.</li>
+            </ol>
+
+            <h3>Exporting DDS Files with Custom Settings</h3>
+            <p>If you need full control over the export process:</p>
+            <ol>
+                <li>Use <strong>Tools > Scripts > Export DDS as...</strong>.</li>
+                <li>Select custom compression settings (DXT1, DXT3, DXT5, BC7, or None).</li>
+                <li>Adjust Mipmap levels, and export the file with the desired DDS settings.</li>
+            </ol>
+        </section>
+
+        <section id="settings">
+            <h2>Plugin Settings</h2>
+            <p>The DDS Evrika Plugin allows saving custom settings, simplifying the import/export process. Access the
+                settings dialog by navigating to:</p>
+            <ol>
+                <li><strong>Tools > Scripts > Evrika Settings</strong></li>
+                <li>Adjust the plugin to use the original filenames during import/export.</li>
+                <li>Customize export file names and formats based on your preferences.</li>
+                <li>Configure default import/export formats for quicker conversions.</li>
             </ol>
         </section>
 
         <section id="troubleshooting">
             <h2>Troubleshooting</h2>
-            <p>If you encounter issues with the conversion process:</p>
+            <p>In case any issues arise:</p>
             <ul>
-                <li>Ensure ImageMagick is properly installed in the "resources" folder.</li>
-                <li>Check the console output for error messages related to the file conversion process.</li>
-                <li>If Krita crashes or freezes, check the system resources and ensure there’s sufficient memory available.</li>
+                <li>Ensure that <strong>ImageMagick</strong> is installed properly and the <code>magick</code> command
+                    works on your system.</li>
+                <li>Double-check if the plugin was copied into the correct directory.</li>
+                <li>If Krita crashes or hangs during conversion, verify the file size and available system memory.</li>
+                <li>If MipMap issues occur during export, try reducing the mipmap level setting to "Auto" for better
+                    compatibility.</li>
             </ul>
         </section>
 
         <section id="support">
             <h2>Support</h2>
-            <p>For further assistance, visit the official <a href="https://krita.org/en/help/">Krita Help page</a>, or contact the plugin author at <em>support@example.com</em>.</p>
+            <p>For further assistance, please visit the official <a href="https://krita.org/en/help/">Krita support
+                    page</a> or contact the plugin's developer via <em>support@example.com</em>.</p>
         </section>
     </main>
 
     <footer>
         <p>&copy; 2024 DDS Evrika Plugin - by sepera_okeq </p>
     </footer>
+
 </body>
+
 </html>

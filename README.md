@@ -2,151 +2,156 @@
 
 ## Overview
 
-**DDSEvrikaPlugin** is a plugin for Krita that allows you to import and export DDS (DirectDraw Surface) files with advanced compression options, leveraging the power of ImageMagick. The plugin enables artists and users to easily handle DDS formats, which are commonly used in game development and texture management.
+**DDSEvrikaPlugin** is a plugin for Krita that allows users to import and export DDS (DirectDraw Surface) files with advanced compression and mipmap options. Using the power of ImageMagick, this plugin helps artists and game developers handle textures and images optimized for real-time rendering.
 
 With **DDSEvrikaPlugin**, you can:
-- Import DDS files into Krita.
-- Export DDS files with various compression formats, including `dxt1`, `dxt3`, `dxt5`, `bc7`, and more.
-- Customizable export settings, such as compression type and mipmap levels.
 
----
+- Import DDS files into Krita and convert them to editable formats.
+- Export Krita documents using various DDS compression formats, including `dxt1`, `dxt3`, `dxt5`, `bc7`, and more.
+- Customize export settings such as DDS compression type, mipmap levels, and file naming options.
 
 ## Features
 
-1. **Import DDS:**
-   - Import DDS textures directly into Krita.
-   - Convert DDS into editable image formats like PNG, BMP, TIFF, etc.
-   
-2. **Export DDS:**
-   - Export Krita documents to DDS formats.
-   - Advanced DDS compression settings: `dxt1`, `dxt3`, `dxt5`, `bc7`, `none`.
-   - Specify the levels of mipmaps for detailed texture control.
-   
-3. **Powered by ImageMagick:**
-   - Uses ImageMagick for robust image and compression handling.
-   - Seamless conversion between formats.
+1. **Import DDS**:
+   - Directly import DDS textures into Krita.
+   - Convert DDS files into formats such as PNG, TIFF, BMP, and others.
+
+2. **Export DDS**:
+   - Export images from Krita in DDS format using various compression options.
+   - Choose advanced DDS compression formats: `dxt1`, `dxt3`, `dxt5`, `bc7`, `none`.
+   - Control mipmap levels for enhanced texture quality across multiple resolutions.
+
+3. **Settings Flexibility**:
+   - Customize how DDS files are named during import and export (retain original names or do custom naming).
+   - Automatically save and reuse your preferred import/export settings for more efficient workflows.
+
+4. **ImageMagick Integration**:
+   - Leverage ImageMagick for robust image format conversions and compression processes.
   
-4. **Localization**
+5. **Localization Support**:
     - English
     - Russian
 
----
+## Installation
 
-## Install
+### Step 1: Download the Plugin
 
-1. **Download plugin**
-   - You can download the current version of the plugin [here](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest).
+- Download the latest plugin version from [the official release page](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest).
 
-2. **Installing the plugin**:
-   - Extract or clone the plugin into Krita’s `pykrita` folder. You can find this folder in different locations depending on your OS:
-     - **Windows**: `C:\Users\<YourUserName>\AppData\Roaming\krita\pykrita\`
-     - **Linux**: `~/.local/share/krita/pykrita/`
-     - **MacOS**: `~/Library/Application Support/krita/pykrita/`
-  
-3. **Restart Krita**:
-   - After installing the plugin, restart Krita to activate the plugin.
+### Step 2: Install Plugin
 
-4. **Verify the Installation**:
-   - Go to `Tools -> Scripts -> DDSEvrikaPlugin` to see the new options under the tools menu.
+- Open [Krita](https://krita.org/) and go to Tools > Scripts > Import Python Plugins..., and select the zip archive. Confirm that you want to enable it.
 
----
+### Step 3: Restart Krita
+
+- Restart Krita to activate the plugin.
+
+### Step 4: Enable the Plugin
+
+- After restart, go to `Tools -> Scripts -> DDSEvrikaPlugin` to verify that the plugin is available in the Krita interface.
+
+## Alternative Installation
+
+### Step 1: Download the Plugin (No ImageMagick include in archive)
+
+- Download the latest plugin version from [the official release page](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest).
+
+### Step 2: Locate Krita's Plugin Folder
+
+- Extract the plugin into the appropriate folder depending on your operating system:
+  - **Windows**: `C:\Users\<YourUser>\AppData\Roaming\krita\pykrita\`
+  - **Linux**: `~/.local/share/krita/pykrita/`
+  - **MacOS**: `~/Library/Application Support/krita/pykrita/`
+
+### Step 3: Install ImageMagick
+
+- Ensure ImageMagick is installed and the `magick` executable is accessible.
+  - On **Windows**, place `magick.exe` in the `resources` folder inside the plugin.
+  - On **Linux** and **MacOS**, ImageMagick should be globally installed via a package manager.
+
+### Step 4: Restart Krita
+
+- Restart Krita to activate the plugin.
+
+### Step 5: Enable the Plugin
+
+- After restart, go to `Tools -> Scripts -> DDSEvrikaPlugin` to verify that the plugin is available in the Krita interface.
+
+## Usage Guide
+
+### Import DDS Files
+
+1. Navigate to `Tools -> Scripts -> Import DDS`.
+2. Select the DDS file you want to convert.
+3. Choose your preferred format (PNG, BMP, TIFF, etc.) for conversion.
+4. The imported image will be editable in a new Krita document.
+
+### Export DDS Files
+
+1. Navigate to `Tools -> Scripts -> Export to DDS`.
+2. Select the desired DDS compression format and mipmap level.
+3. The exported `.dds` file will be saved to your chosen directory.
+
+### Import/Export with Advanced Settings
+
+1. Use the `Import DDS as...` or `Export DDS as...` options to customize the format, compression, mipmap levels, and adjust file names.
+2. Control export settings directly from the settings dialog via `Tools -> Scripts -> Evrika Settings`.
+
+## Plugin Settings
+
+- **Compression Formats**: Choose from `dxt1`, `dxt3`, `dxt5`, `bc7`, or none.
+- **Mipmap Levels**: Choose automatic mipmap detection or select levels 1-5.
+- **File Naming**: Options to use original file names or temp generate name. Add support specify custom export name.
 
 ## Requirements
 
-- **Krita** version 4.2 or higher.
-- **ImageMagick** installed and accessible via the command line.
-  - On **Windows**, ensure that `magick.exe` is placed in the `resources` folder (you can configure its path manually).
-  - On **Linux** and **MacOS**, ensure that `magick` is installed globally via your package manager (`apt`, `brew`, etc.).
+- **Krita 4.2+**: Ensure you have Krita version 4.2 or higher.
+- **ImageMagick**: Installed and configured in your system's PATH. Use the provided `magick.exe` for Windows systems, or globally install ImageMagick on Linux and MacOS (`apt`/`brew`).
 
----
+## Support & Troubleshooting
 
-## Develop
+### Common issues
 
-1. **Clone repo**:
-   - Clone this repository or download it as a ZIP.
+1. **Issue: ImageMagick not found**
+   - Ensure `magick` is installed and its location is in your **PATH**.
+   - For Windows, verify `magick.exe` is in the `resources` folder of the plugin.
 
-2. **Install ImageMagick**:
-   - Windows/Linux/MacOS: Download and install ImageMagick from the [official website](https://imagemagick.org/script/download.php).
-   - Drop in path installing plugin, t.e `installing_plugin\dds_evrika_plugin\resources`
+2. **Issue: DDS export fails**
+   - Ensure the output file has the correct `.dds` extension.
+   - Verify that the DDS compression format is supported by ImageMagick.
 
----
+3. **Krita crashes or the plugin doesn't appear**
+   - Make sure the plugin is unzipped in the correct `pykrita` folder. Restart Krita after installation.
 
-## Usage
+## Development
 
-Once **DDSEvrikaPlugin** is installed and activated, you can start importing and exporting DDS files directly within Krita.
+### Step 1: Clone the repository
 
-- **Importing a DDS File**:
-  1. Select `Tools -> Scripts -> Import DDS`.
-  2. Choose the DDS file you wish to import.
-  3. Optionally choose the image format for conversion (e.g. PNG, BMP, TIFF).
-  4. The file will be imported into a new Krita document.
+- Clone the project: `git clone https://github.com/Sepera-okeq/DDS-Evrika-Plugin`
 
-- **Exporting to DDS**:
-  1. Select `Tools -> Scripts -> Export to DDS`.
-  2. Choose the options for compression and other settings via the dialog box:
-     - **Format Selection**: `png`, `tiff`, `bmp`, etc.
-     - **DDS Compression**: `dxt1`, `dxt3`, `dxt5`, `bc7`, or no compression.
-     - **Mipmap Levels**: Choose the number of mipmaps, or let it be auto-detected.
-  3. The file will be saved as a `.dds` file in the chosen directory.
+### Step 2: Install dependencies
 
----
+- Install ImageMagick from the [official website](https://imagemagick.org/script/download.php) or via a package manager.
+- Drop `magick.exe` in the `resources` folder (Windows).
 
-## Plugin Options
+### Step 3: Start developing
 
-### Compression Formats
-
-You can export DDS files using various compression methods supported by ImageMagick:
-
-- `dxt1`: Provides compression with 1-bit alpha (transparency) or none.
-- `dxt3`: For textures with 4-bit explicit alpha channels (better transparency).
-- `dxt5`: Uses interpolated alpha values for better gradient textures.
-- `bc7`: High-performance compression, common in modern engines.
-- `none`: No compression (raw format).
-
-### Mipmap Levels
-
-Mipmaps are used in textures to improve rendering performance. The plugin supports multiple levels of mipmaps for better control of texture quality:
-
-- `Auto`: Automatically detects mipmap levels.
-- Custom levels: Choose from `1`, `2`, `3`, `4`, `5`, etc.
-
----
-
-## Troubleshooting
-
-1. **ImageMagick not found**:
-   - Ensure that ImageMagick is properly installed on your system and available in your system's PATH.
-   - On Windows, confirm that the `magick.exe` file is located in the `resources` folder inside the plugin directory.
-
-2. **DDS Export fails**:
-   - Make sure that the output file path has the correct `.dds` extension.
-   - Check that the selected DDS compression format is supported.
-
-4. **Other issues**:
-   - If Krita crashes or the plugin doesn't appear after installation, check if you have installed the plugin in the correct `pykrita` directory. Ensure you restart Krita after installation.
-
----
+- Make your changes and test the plugin within Krita.
 
 ## Contributing
 
-If you wish to contribute:
-
 1. Fork the repository.
-2. Create a new branch: `git checkout -b feature-xyz`
-3. Commit your changes: `git commit -m "feat: Add some feature"`
-4. Push to the branch: `git push origin feature-xyz`
-5. Submit a pull request.
-
----
+2. Create a new branch: `git checkout -b feature-xyz`.
+3. Commit your changes: `git commit -m "feat: Add new feature"`.
+4. Push your branch: `git push origin feature-xyz`.
+5. Open a pull request on GitHub.
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
-
----
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## Credits
 
-- **PyQt5**: The Python bindings for the Qt framework.
-- **ImageMagick**: Used to handle image conversion and compression.
-- **Krita**: An amazing open-source painting software.
+- **PyQt5**: Python bindings for cross-platform GUIs.
+- **ImageMagick**: Handling image conversions and compressions.
+- **Krita**: An open-source painting software.
