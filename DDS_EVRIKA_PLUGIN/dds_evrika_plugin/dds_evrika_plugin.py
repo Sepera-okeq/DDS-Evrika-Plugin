@@ -70,21 +70,17 @@ class EvrikaSettingsWidget(QWidget):
         else:
             self.locale_en()
 
-        # Основной layout
         layout = QVBoxLayout(self)
 
-        # Секция для временных имен файлов
         self.temp_export_check = QCheckBox(self.translations["use_original_export_name"])
         self.temp_import_check = QCheckBox(self.translations["use_original_import_name"])
         self.export_name_input = QLineEdit()
         self.export_name_input.setPlaceholderText(self.translations["export_custom_name"])
 
-        # Загрузка сохраненных настроек
         self.temp_export_check.setChecked(self.settings.get("use_original_export_name", False))
         self.temp_import_check.setChecked(self.settings.get("use_original_import_name", False))
         self.export_name_input.setText(self.settings.get("export_custom_name", ""))
 
-        # Импорт и экспорт: выбор формата и компрессии
         form_layout = QFormLayout()
         self.import_format_combo = QComboBox()
         self.import_format_combo.addItems(["png", "tiff", "bmp", "jpeg", "tga"])
@@ -98,16 +94,18 @@ class EvrikaSettingsWidget(QWidget):
         self.export_mipmap_combo.addItems(["1", "2", "3", "4", "5", "Auto"])
         self.export_mipmap_combo.setCurrentText(self.settings.get("export_mipmap", "Auto"))
 
-        # Добавляем поля в форму
+        self.export_filter_combo = QComboBox()
+        self.export_filter_combo.addItems(["Undefined", "Point", "Box", "Triangle", "Hermite", "Hanning", "Hamming", "Blackman", "Gaussian", "Quadratic", "Cubic", "Catrom", "Mitchell", "Jinc", "Sinc", "SincFast", "Kaiser", "Welch", "Parzen", "Bohman", "Bartlett", "Lagrange", "Lanczos", "LanczosSharp", "Lanczos2", "Lanczos2Sharp", "Robidoux", "RobidouxSharp", "Cosine", "Spline", "Sentinel"])
+        self.export_filter_combo.setCurrentText(self.settings.get("export_filter", "Lanczos"))
+
         form_layout.addRow(self.translations["import_format"], self.import_format_combo)
         form_layout.addRow(self.translations["export_compression"], self.export_compression_combo)
         form_layout.addRow(self.translations["export_mipmap"], self.export_mipmap_combo)
+        form_layout.addRow(self.translations["export_filter"], self.export_filter_combo)
 
-        # Кнопка "Сохранить"
         save_button = QPushButton(self.translations["save_settings"])
         save_button.clicked.connect(self.save_settings)
 
-        # Добавляем элементы на Layout
         layout.addWidget(QLabel("<b>{}</b>".format(self.translations["temporary_file_settings"])))
         layout.addWidget(self.temp_export_check)
         layout.addWidget(self.temp_import_check)
@@ -124,6 +122,7 @@ class EvrikaSettingsWidget(QWidget):
             "import_format": "Формат (импорт)",
             "export_compression": "Компрессия (экспорт)",
             "export_mipmap": "Уровни Mipmap (экспорт)",
+            "export_filter": "Фильтр (экспорт)",
             "save_settings": "Сохранить настройки",
             "temporary_file_settings": "Настройки временных файлов",
             "custom_export_name": "Кастомное имя файла для экспорта",
@@ -138,6 +137,7 @@ class EvrikaSettingsWidget(QWidget):
             "import_format": "Format (import)",
             "export_compression": "Compression (export)",
             "export_mipmap": "Mipmap Levels (export)",
+            "export_filter": "Filter (export)",
             "save_settings": "Save settings",
             "temporary_file_settings": "Temporary file settings",
             "custom_export_name": "Custom export file name",
@@ -145,13 +145,14 @@ class EvrikaSettingsWidget(QWidget):
         }
 
     def save_settings(self):
-        """Сохраняем текущие настройки через объект SettingsManager."""
+        """Save current settings through the SettingsManager."""
         self.settings.set("use_original_export_name", self.temp_export_check.isChecked())
         self.settings.set("use_original_import_name", self.temp_import_check.isChecked())
         self.settings.set("export_custom_name", self.export_name_input.text())
         self.settings.set("import_format", self.import_format_combo.currentText())
         self.settings.set("export_compression", self.export_compression_combo.currentText())
         self.settings.set("export_mipmap", self.export_mipmap_combo.currentText())
+        self.settings.set("export_filter", self.export_filter_combo.currentText())
         QMessageBox.information(self, "Evrika Settings", self.translations["saved_seccess_settings"])
 
 
@@ -179,6 +180,7 @@ class DDSEvrikaPlugin(Extension):
                 "use_saved_settings": "Использовать мои настройки",
                 "overwrite_settings": "Перезаписать текущие настройки",
                 "mipmap_levels": "Уровни Mipmap",
+                "export_filter": "Фильтр (экспорт)",
                 "ok": "ОК",
                 "cancel": "Отмена",
                 "error": "Ошибка",
@@ -198,6 +200,7 @@ class DDSEvrikaPlugin(Extension):
                 "use_saved_settings": "Use my settings",
                 "overwrite_settings": "Overwrite current settings",
                 "mipmap_levels": "Mipmap levels",
+                "export_filter": "Filter (export)",
                 "ok": "OK",
                 "cancel": "Cancel",
                 "error": "Error",
@@ -349,11 +352,15 @@ class DDSEvrikaPlugin(Extension):
 
         compression_format = self.settings.get("export_compression", "dxt1")
         mipmap_levels = self.settings.get("export_mipmap", "Auto")
+        export_filter = self.settings.get("export_filter", "Lanczos")  # Get the export filter setting
 
-        if compression_format != "none":
-            args.extend(["-define", f"dds:compression={compression_format.lower()}"])
+        args.extend(["-define", f"dds:compression={compression_format.lower()}"])
+
         if mipmap_levels != "Auto":
             args.extend(["-define", f"dds:mipmaps={mipmap_levels}"])
+        
+        # Add the filter option to the ImageMagick command
+        args.extend(["-filter", export_filter.lower()])
 
         args.append(save_file)
 
@@ -377,11 +384,20 @@ class DDSEvrikaPlugin(Extension):
         layout.addWidget(compression_format)
 
         mipmaps_label = QLabel(self.translations["mipmap_levels"])
+        layout.addWidget(mipmaps_label)
         mipmaps_combo = QComboBox()
         mipmaps_combo.addItems(["Auto", "1", "2", "3", "4", "5"])
         layout.addWidget(mipmaps_combo)
 
-        overwrite_checkbox = QCheckBox(self.translations["overwrite_settings"])
+        # Добавляем Label и ComboBox для выбора фильтра
+        filter_label = QLabel(self.translations["export_filter"])
+        layout.addWidget(filter_label)
+
+        filter_combo = QComboBox()
+        filter_combo.addItems(["Lanczos", "Undefined", "Point", "Box", "Triangle", "Hermite", "Hanning", "Hamming", "Blackman", "Gaussian", "Quadratic", "Cubic", "Catrom", "Mitchell", "Jinc", "Sinc", "SincFast", "Kaiser", "Welch", "Parzen", "Bohman", "Bartlett", "Lagrange", "LanczosSharp", "Lanczos2", "Lanczos2Sharp", "Robidoux", "RobidouxSharp", "Cosine", "Spline", "Sentinel"])
+        layout.addWidget(filter_combo)
+
+        overwrite_checkbox = QCheckBox(self.translations.get("overwrite_settings", "Overwrite current settings"))
         layout.addWidget(overwrite_checkbox)
 
         buttons_layout = QHBoxLayout()
@@ -394,18 +410,19 @@ class DDSEvrikaPlugin(Extension):
         def save_temporary_settings():
             compression = compression_format.currentText()
             mipmaps = mipmaps_combo.currentText()
+            filter_option = filter_combo.currentText()  # Получаем значение фильтра
             overwrite = overwrite_checkbox.isChecked()
 
             if overwrite:
-                self.save_user_preferences(compression, mipmaps)
+                self.save_user_preferences(compression, mipmaps, filter_option)
 
-            if is_import:
+            if is_import:  # Для импорта
                 self.process_import_dialog(compression, mipmaps)
-            else:
-                self.process_export_dialog(compression, mipmaps)
-            
+            else:  # Для экспорта
+                self.process_export_dialog(compression, mipmaps, filter_option)
+                
             dialog.accept()
-            
+
         confirm_button.clicked.connect(save_temporary_settings)
         cancel_button.clicked.connect(dialog.reject)
         dialog.exec_()
@@ -424,10 +441,10 @@ class DDSEvrikaPlugin(Extension):
         imagick_path = os.path.join(os.path.dirname(__file__), 'resources', 'magick.exe') if platform == "win32" else 'magick'
         args = [imagick_path, input_file, output_file]
 
-        if compression_format != "none":
-            args.extend(['-define', f'dds:compression={compression_format.lower()}'])
-        if mipmap_levels != "Auto":
-            args.extend(['-define', f'dds:mipmaps={mipmap_levels}'])
+        #if compression_format != "none":
+        #    args.extend(['-define', f'dds:compression={compression_format.lower()}'])
+        #if mipmap_levels != "Auto":
+        #    args.extend(['-define', f'dds:mipmaps={mipmap_levels}'])
 
         try:
             subprocess.run(args, check=True)
@@ -438,18 +455,22 @@ class DDSEvrikaPlugin(Extension):
         finally:
             shutil.rmtree(temp_directory_location)
 
-    def process_export_dialog(self, compression_format, mipmap_levels):
+    def process_export_dialog(self, compression_format, mipmap_levels, filter_option):
+        """Процесс экспорта с исправлением для обработки компрессии 'none'"""
         doc = Krita.instance().activeDocument()
+        
         if not doc:
             self.showError(self.translations["no_document"])
             return
 
+        # Сохранение файла DDS
         save_file, _ = QFileDialog.getSaveFileName(caption=self.translations["export_dds"], filter="DDS files (*.dds)")
         if not save_file:
             return
         if not save_file.lower().endswith(".dds"):
             save_file += ".dds"
 
+        # Генерация временного файла PNG
         temp_filename = self.generate_temp_filename(doc.fileName(), ".png", for_export=True)
         temp_directory_location = os.path.join(os.path.dirname(__file__), "temp_dds_export")
         if not os.path.isdir(temp_directory_location):
@@ -458,27 +479,43 @@ class DDSEvrikaPlugin(Extension):
         temp_png_file = os.path.join(temp_directory_location, temp_filename)
         doc.saveAs(temp_png_file)
 
+        # Путь для работы с ImageMagick
         imagick_path = os.path.join(os.path.dirname(__file__), "resources", "magick.exe") if platform == "win32" else "magick"
+
+        # Создаем список аргументов для команды
         args = [imagick_path, temp_png_file]
 
-        if compression_format != "none":
-            args.extend(["-define", f"dds:compression={compression_format.lower()}"])
+        # Добавляем фильтр
+        if filter_option:
+            args.extend(["-filter", filter_option])
+
+        # Указываем формат компрессии, включая "none"
+        args.extend(["-define", f"dds:compression={compression_format.lower()}"])
+
+        # Добавляем количество уровней Mipmap, если оно не "Auto"
         if mipmap_levels != "Auto":
             args.extend(["-define", f"dds:mipmaps={mipmap_levels}"])
 
+        # Даем команду сохранить файл в формате DDS
         args.append(save_file)
 
+        # Показываем финальную версию аргументов команды для ImageMagick
+        #QMessageBox.information(None, "Отладка", f"Сформированная команда для ImageMagick:\n{' '.join(args)}")
+
         try:
+            # Запускаем команду через subprocess
             subprocess.run(args, check=True)
-            self.showMessage(self.translations["file_saved"] + save_file)
+            self.showMessage(self.translations["file_saved"] + save_file)  # Сообщаем об успешном сохранении
         except subprocess.CalledProcessError as e:
             self.showError(self.translations["error_processing"] + str(e))
         finally:
-            shutil.rmtree(temp_directory_location)
+            shutil.rmtree(temp_directory_location)  # Удаляем временные файлы
 
-    def save_user_preferences(self, compression, mipmaps):
+    def save_user_preferences(self, compression, mipmaps, filter_option):
+        """Сохраняем пользовательские параметры экспорта, включая фильтр"""
         self.settings.set("saved_compression", compression)
         self.settings.set("saved_mipmap", mipmaps)
+        self.settings.set("saved_filter", filter_option)
 
     def showError(self, message):
         messageBox = QMessageBox()

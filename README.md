@@ -2,13 +2,18 @@
 
 ## Overview
 
-**DDSEvrikaPlugin** is a plugin for Krita that allows users to import and export DDS (DirectDraw Surface) files with advanced compression and mipmap options. Using the power of ImageMagick, this plugin helps artists and game developers handle textures and images optimized for real-time rendering.
+**DDSEvrikaPlugin** is a plugin for Krita that allows users to import and export DDS (DirectDraw Surface) files with advanced compression, mipmap, and filter options. The plugin relies on the power of ImageMagick to handle image format conversions and compressions, making it an ideal tool for texture creation and optimization in video games and 3D rendering environments.
 
 With **DDSEvrikaPlugin**, you can:
 
 - Import DDS files into Krita and convert them to editable formats.
 - Export Krita documents using various DDS compression formats, including `dxt1`, `dxt3`, `dxt5`, `bc7`, and more.
-- Customize export settings such as DDS compression type, mipmap levels, and file naming options.
+- Customize export settings such as DDS compression type, mipmap levels, filter options, and file naming configuration.
+
+## What's New in Version 1.2
+
+- Added **filter support** during DDS export (available filters: Lanczos, Box, Triangle, Mitchell, and Catmull-Rom), enhancing the control over image resizing and quality.
+- Improved **transparency handling**: Added guidelines for selecting an appropriate compression format (such as **DXT5**) to better handle textures with transparency or alpha channels.
 
 ## Features
 
@@ -18,17 +23,21 @@ With **DDSEvrikaPlugin**, you can:
 
 2. **Export DDS**:
    - Export images from Krita in DDS format using various compression options.
-   - Choose advanced DDS compression formats: `dxt1`, `dxt3`, `dxt5`, `bc7`, `none`.
-   - Control mipmap levels for enhanced texture quality across multiple resolutions.
+   - Choose advanced DDS compression formats: `dxt1`, `dxt3`, `dxt5`, `bc7`, or disable compression entirely with `none`.
+   - Easily control mipmap levels for better texture resolution handling.
+   - Apply filters like **Lanczos**, **Box**, **Mitchell**, among others, to control the image export quality.
 
 3. **Settings Flexibility**:
-   - Customize how DDS files are named during import and export (retain original names or do custom naming).
-   - Automatically save and reuse your preferred import/export settings for more efficient workflows.
+   - Customize DDS file naming options (retain original names or create custom names).
+   - Automatically save and reuse your preferred import/export settings for faster workflows.
 
-4. **ImageMagick Integration**:
+4. **Improved Transparency Handling**:
+   - When dealing with semi-transparent images, use **DXT5** compression to preserve smooth transitions in transparency.
+
+5. **ImageMagick Integration**:
    - Leverage ImageMagick for robust image format conversions and compression processes.
   
-5. **Localization Support**:
+6. **Localization Support**:
     - English
     - Russian
 
@@ -48,11 +57,11 @@ With **DDSEvrikaPlugin**, you can:
 
 ### Step 4: Enable the Plugin
 
-- After restart, go to `Tools -> Scripts -> DDSEvrikaPlugin` to verify that the plugin is available in the Krita interface.
+- After restart, go to `Tools -> Scripts -> DDSEvrikaPlugin` to ensure that the plugin is available.
 
 ## Alternative Installation
 
-### Step 1: Download the Plugin (No ImageMagick include in archive)
+### Step 1: Without ImageMagick included in the archive
 
 - Download the latest plugin version from [the official release page](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest).
 
@@ -90,7 +99,8 @@ With **DDSEvrikaPlugin**, you can:
 
 1. Navigate to `Tools -> Scripts -> Export to DDS`.
 2. Select the desired DDS compression format and mipmap level.
-3. The exported `.dds` file will be saved to your chosen directory.
+3. Choose a filter (such as **Lanczos**, **Box**, or **Mitchell**) for optimal quality.
+4. The exported `.dds` file will be saved to your chosen directory.
 
 ### Import/Export with Advanced Settings
 
@@ -101,12 +111,17 @@ With **DDSEvrikaPlugin**, you can:
 
 - **Compression Formats**: Choose from `dxt1`, `dxt3`, `dxt5`, `bc7`, or none.
 - **Mipmap Levels**: Choose automatic mipmap detection or select levels 1-5.
-- **File Naming**: Options to use original file names or temp generate name. Add support specify custom export name.
+- **Image Filters**: Apply filters (Lanczos, Box, Mitchell, Catmull-Rom, Triangle) during the export process to manage image resizing quality.
+- **File Naming**: Options to use original file names or generate custom names. Supports specifying custom export names.
 
 ## Requirements
 
 - **Krita 4.2+**: Ensure you have Krita version 4.2 or higher.
-- **ImageMagick**: Installed and configured in your system's PATH. Use the provided `magick.exe` for Windows systems, or globally install ImageMagick on Linux and MacOS (`apt`/`brew`).
+- **ImageMagick**: Installed and configured in your system's PATH. Use the provided `magick.exe` for Windows systems, or install ImageMagick globally on Linux and macOS (`apt`/`brew`).
+
+## Known Issues with Transparency
+
+For images containing transparency or semi-transparent areas, it is recommended to use the **DXT5** compression format. **DXT1**, while efficient, supports only binary transparency, leading to the loss of partial transparency. If this compression format is selected in conjunction with filters like **Lanczos**, it may blend and remove transparency, so use **DXT5** to preserve a smooth transition.
 
 ## Support & Troubleshooting
 
@@ -119,9 +134,10 @@ With **DDSEvrikaPlugin**, you can:
 2. **Issue: DDS export fails**
    - Ensure the output file has the correct `.dds` extension.
    - Verify that the DDS compression format is supported by ImageMagick.
+   - If you are working with transparency, make sure you're using **DXT5** to preserve the alpha channel.
 
 3. **Krita crashes or the plugin doesn't appear**
-   - Make sure the plugin is unzipped in the correct `pykrita` folder. Restart Krita after installation.
+   - Ensure the plugin is unzipped in the correct `pykrita` folder. Restart Krita after installation.
 
 ## Development
 

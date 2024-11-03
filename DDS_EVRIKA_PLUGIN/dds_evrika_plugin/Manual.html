@@ -21,17 +21,18 @@
 
 <body>
     <header>
-        <h1>Krita DDS Evrika Plugin - User Manual (Updated 1.1)</h1>
+        <h1>Krita DDS Evrika Plugin - User Manual (Updated 1.2)</h1>
     </header>
 
     <main>
         <section id="introduction">
             <h2>Introduction</h2>
             <p>The DDS Evrika Plugin is an extension for <strong>Krita</strong>, enabling users to import and export DDS
-                image files using ImageMagick. DDS (DirectDraw Surface) is a popular format for storing textures and
-                images optimized for real-time rendering, often used in video games and 3D applications.</p>
-            <p>This updated version introduces support for customizable import, export settings, mipmap levels, and
-                integration with Krita's scripting interface for a more flexible workflow.</p>
+               image files using ImageMagick. DDS (DirectDraw Surface) is a popular format for storing textures and
+               images optimized for real-time rendering, often used in video games and 3D applications.</p>
+            <p>This updated version introduces the ability to choose filters during export (Lanczos, Box, and more), 
+               customizable import/export settings, mipmap levels, and integration with Krita's scripting interface 
+               for a more flexible workflow.</p>
         </section>
 
         <section id="installation">
@@ -45,8 +46,7 @@
                 </ul>
                 <li>Ensure that ImageMagick is installed and available in the "resources" folder of the plugin.</li>
                 <li>Restart Krita after copying the plugin files.</li>
-                <li>Activate the plugin from the Krita interface via <em>"Tools > Scripts > Evrika DDS Plugin".</em>
-                </li>
+                <li>Activate the plugin from the Krita interface via <em>"Tools > Scripts > Evrika DDS Plugin".</em></li>
             </ol>
         </section>
 
@@ -58,7 +58,7 @@
             <ol>
                 <li>Navigate to <strong>Tools > Scripts > Import DDS</strong>.</li>
                 <li>Select the DDS file you want to open.</li>
-                <li>The file will be converted to a chosen format such as PNG or TGA (based on your settings).</li>
+                <li>The file will be converted to a chosen format such as PNG, TIFF, GIF, or TGA (based on your settings).</li>
                 <li>The image will open in Krita after conversion.</li>
             </ol>
 
@@ -71,10 +71,11 @@
             </ol>
 
             <h3>Exporting DDS Files</h3>
-            <p>Exporting is straightforward with options for selecting compression and mipmap levels:</p>
+            <p>Exporting is straightforward with options for selecting compression, mipmap levels, and filters:</p>
             <ol>
                 <li>Navigate to <strong>Tools > Scripts > Export DDS</strong>.</li>
-                <li>Select the compression type (DXT1, DXT3, DXT5, BC7) and set the Mipmap Levels (Auto, 1-5).</li>
+                <li>Select the compression type (DXT1, DXT3, DXT5, BC7) and set the Mipmap levels (Auto, 1-5).</li>
+                <li>Select a filter option (Lanczos, Box, Triangle, Mitchell, or Catmull-Rom)</li>
                 <li>Export the file using the DDS format.</li>
             </ol>
 
@@ -83,18 +84,19 @@
             <ol>
                 <li>Use <strong>Tools > Scripts > Export DDS as...</strong>.</li>
                 <li>Select custom compression settings (DXT1, DXT3, DXT5, BC7, or None).</li>
-                <li>Adjust Mipmap levels, and export the file with the desired DDS settings.</li>
+                <li>Adjust Mipmap levels and filter settings.</li>
+                <li>Export the file with the desired DDS settings.</li>
             </ol>
         </section>
 
         <section id="settings">
             <h2>Plugin Settings</h2>
             <p>The DDS Evrika Plugin allows saving custom settings, simplifying the import/export process. Access the
-                settings dialog by navigating to:</p>
+               settings dialog by navigating to:</p>
             <ol>
                 <li><strong>Tools > Scripts > Evrika Settings</strong></li>
                 <li>Adjust the plugin to use the original filenames during import/export.</li>
-                <li>Customize export file names and formats based on your preferences.</li>
+                <li>Customize export file names, filters, and formats based on your preferences.</li>
                 <li>Configure default import/export formats for quicker conversions.</li>
             </ol>
         </section>
@@ -107,8 +109,7 @@
                     works on your system.</li>
                 <li>Double-check if the plugin was copied into the correct directory.</li>
                 <li>If Krita crashes or hangs during conversion, verify the file size and available system memory.</li>
-                <li>If MipMap issues occur during export, try reducing the mipmap level setting to "Auto" for better
-                    compatibility.</li>
+                <li>If MipMap or filter issues occur during export, try tweaking the mipmap level or filter setting for better compatibility.</li>
             </ul>
         </section>
 
