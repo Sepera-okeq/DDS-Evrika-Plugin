@@ -1,14 +1,17 @@
-To download Imagick, follow these steps:
+# resources
 
-1. Go to the official Imagick website.
-2. Look for the portable version of Imagick and click on the download link.
-3. Once the download is complete, locate the downloaded file on your computer.
-4. Extract the contents of the downloaded file to a desired location.
-5. Open the folder where you extracted the files.
-6. Inside the extracted folder, you will find the Imagick binary file.
-7. Copy the Imagick binary file.
-8. Navigate to the "resources" folder in your project directory.
-9. Paste the copied Imagick binary file into the "resources" folder.
-10. You have successfully downloaded and placed the Imagick binary file in the "resources" folder.
+External command line tools used by the plugin. Release archives already contain
+everything for their OS; this folder is only relevant when you install from source.
 
-Please note that these instructions assume you have already set up your development environment and have the necessary permissions to download and copy files.
+The plugin looks for the tools in this order:
+
+1. The path set in **Tools > Scripts > DDS Evrika Settings**.
+2. This folder:
+   - `cuttlefish/bin/cuttlefish` (Linux, macOS) or `cuttlefish/cuttlefish.exe` (Windows)
+     from <https://github.com/akb825/Cuttlefish/releases>, keep the `lib` folder next to `bin`;
+   - `magick.exe` or `imagemagick/magick.exe` (Windows) from the ImageMagick
+     *portable* build, `magick` (Linux, macOS).
+3. `PATH` and the usual install folders (`/opt/homebrew/bin`, `/usr/local/bin`,
+   `/opt/local/bin`, `/usr/bin`). ImageMagick 6 `convert` is also accepted on Linux/macOS.
+
+`python3 tools/build_release.py` downloads and places these files automatically.

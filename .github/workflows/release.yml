@@ -1,0 +1,59 @@
+name: Build release archives
+
+on:
+  push:
+    tags: ["v*"]
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Byte-compile the plugin
+        run: python -m compileall -q DDS_EVRIKA_PLUGIN tools
+      - name: Validate locale files
+        run: |
+          python - <<'EOF'
+          import json, pathlib
+          base = pathlib.Path("DDS_EVRIKA_PLUGIN/dds_evrika_plugin/locales")
+          reference = set(json.loads((base / "en.json").read_text(encoding="utf-8")))
+          for path in sorted(base.glob("*.json")):
+              keys = set(json.loads(path.read_text(encoding="utf-8")))
+              missing = reference - keys
+              print(f"{path.name}: {len(keys)} keys, missing: {sorted(missing) or 'none'}")
+          EOF
+
+  build:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check that the tag matches the plugin version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: grep -q "^VERSION = \"${GITHUB_REF_NAME#v}\"" DDS_EVRIKA_PLUGIN/dds_evrika_plugin/dds_evrika_plugin.py
+      - name: Install 7-Zip
+        run: command -v 7z || (sudo apt-get update && sudo apt-get install -y p7zip-full)
+      - name: Build archives for Windows, Linux, macOS
+        run: python tools/build_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dds_evrika_plugin
+          path: dist/*.zip
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          generate_release_notes: true
