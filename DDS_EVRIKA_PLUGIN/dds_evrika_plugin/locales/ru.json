@@ -1,0 +1,86 @@
+{
+    "_language_name": "Русский",
+
+    "action_import": "Импортировать DDS",
+    "action_import_as": "Импортировать DDS как...",
+    "action_export": "Экспортировать DDS",
+    "action_export_as": "Экспортировать DDS как...",
+    "action_settings": "Настройки DDS Evrika",
+
+    "section_import": "Импорт",
+    "section_export": "Экспорт",
+    "section_names": "Имена временных файлов",
+    "section_tools": "Внешние программы",
+    "section_interface": "Интерфейс",
+
+    "import_format": "Промежуточный формат изображения",
+    "compression_format": "Формат сжатия",
+    "colorspace": "Цветовое пространство",
+    "mipmaps": "Mipmap-уровни",
+    "mipmap_filter": "Фильтр mipmap",
+    "quality": "Качество сжатия",
+    "encoder": "Кодировщик",
+    "language": "Язык",
+    "language_auto": "Автоматически (язык Krita)",
+    "language_restart": "Смена языка применится после перезапуска Krita.",
+
+    "format_dxt1": "BC1 / DXT1 - RGB, 1-битная альфа",
+    "format_dxt3": "BC2 / DXT3 - RGBA, резкая альфа",
+    "format_dxt5": "BC3 / DXT5 - RGBA, плавная альфа",
+    "format_bc4": "BC4 - один канал (маски, roughness)",
+    "format_bc5": "BC5 - два канала (карты нормалей)",
+    "format_bc7": "BC7 - RGBA высокого качества",
+    "format_none": "Без сжатия, RGBA 8 бит",
+
+    "colorspace_srgb": "sRGB - цветные текстуры",
+    "colorspace_linear": "Linear - нормали, маски, данные",
+    "colorspace_tooltip": "sRGB: формат *_SRGB, mipmap усредняются в линейном свете.\nLinear: формат UNORM, значения пикселей записываются без изменений.\nImageMagick пишет DDS со старым заголовком, в котором нет флага sRGB.",
+
+    "mipmaps_auto": "Полная цепочка (до 1x1)",
+    "mipmaps_none": "Без mipmap",
+    "mipmaps_count": "Дополнительных уровней: {count}",
+
+    "quality_fast": "Быстро",
+    "quality_normal": "Нормально",
+    "quality_best": "Максимум (медленно)",
+
+    "encoder_auto": "Автоматически (Cuttlefish, если есть)",
+    "encoder_cuttlefish": "Cuttlefish",
+    "encoder_imagemagick": "ImageMagick",
+
+    "use_original_export_name": "Использовать имя документа для временного файла экспорта",
+    "use_original_import_name": "Использовать имя DDS-файла для импортированного документа",
+    "export_custom_name": "Своё имя временного файла экспорта",
+    "export_custom_name_placeholder": "Пусто - использовать имя документа",
+
+    "magick_path": "ImageMagick",
+    "cuttlefish_path": "Cuttlefish",
+    "path_placeholder": "Пусто - найти автоматически",
+    "browse": "Обзор...",
+    "tool_found": "найден: {path}",
+    "tool_not_found": "не найден",
+
+    "save_as_default": "Запомнить эти настройки",
+    "save": "Сохранить",
+    "ok": "ОК",
+    "cancel": "Отмена",
+    "settings_saved": "Настройки сохранены.",
+
+    "title_error": "DDS Evrika - ошибка",
+    "title_done": "DDS Evrika",
+    "file_filter_dds": "Текстуры DDS (*.dds *.DDS)",
+    "export_done": "Сохранено: {path}\nФормат: {format}, цветовое пространство: {colorspace}, кодировщик: {encoder}",
+    "no_document": "Нет открытого документа для экспорта.",
+    "error_temp_export": "Krita не смогла сохранить временный PNG-файл.",
+    "error_open": "Krita не смогла открыть сконвертированное изображение: {path}",
+
+    "err_tool_start": "Не удалось запустить {tool}.",
+    "err_tool_failed": "{tool} завершился с кодом {code}.",
+    "err_not_png": "Временный файл не является PNG: {path}",
+    "err_cuttlefish_missing": "Cuttlefish не найден. Используйте архив релиза для вашей ОС (Cuttlefish уже внутри), установите его в PATH или укажите путь в настройках DDS Evrika.",
+    "err_no_encoder": "Не найден ни Cuttlefish, ни ImageMagick. Инструкция по установке - в руководстве плагина.",
+    "err_im_format_unsupported": "ImageMagick не умеет записывать DDS в формате {format}: поддерживаются только DXT1, DXT5 и без сжатия. Установите Cuttlefish или выберите другой формат.",
+    "err_unknown_compression": "Неизвестный формат сжатия: {format}",
+    "err_cuttlefish_gray": "Cuttlefish не читает изображения в оттенках серого. Переведите документ в RGB (Изображение > Преобразовать цветовое пространство) или установите ImageMagick.",
+    "err_magick_missing": "ImageMagick не найден, без него нельзя открыть DDS. Инструкция по установке - в руководстве плагина."
+}

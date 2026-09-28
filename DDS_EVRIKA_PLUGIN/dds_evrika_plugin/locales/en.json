@@ -1,0 +1,86 @@
+{
+    "_language_name": "English",
+
+    "action_import": "Import DDS",
+    "action_import_as": "Import DDS as...",
+    "action_export": "Export DDS",
+    "action_export_as": "Export DDS as...",
+    "action_settings": "DDS Evrika Settings",
+
+    "section_import": "Import",
+    "section_export": "Export",
+    "section_names": "Temporary file names",
+    "section_tools": "External tools",
+    "section_interface": "Interface",
+
+    "import_format": "Intermediate image format",
+    "compression_format": "Compression format",
+    "colorspace": "Color space",
+    "mipmaps": "Mipmaps",
+    "mipmap_filter": "Mipmap filter",
+    "quality": "Compression quality",
+    "encoder": "Encoder",
+    "language": "Language",
+    "language_auto": "Automatic (Krita language)",
+    "language_restart": "The language change will be applied after restarting Krita.",
+
+    "format_dxt1": "BC1 / DXT1 - RGB, 1-bit alpha",
+    "format_dxt3": "BC2 / DXT3 - RGBA, sharp alpha",
+    "format_dxt5": "BC3 / DXT5 - RGBA, smooth alpha",
+    "format_bc4": "BC4 - single channel (masks, roughness)",
+    "format_bc5": "BC5 - two channels (normal maps)",
+    "format_bc7": "BC7 - high quality RGBA",
+    "format_none": "Uncompressed RGBA 8-bit",
+
+    "colorspace_srgb": "sRGB - color textures",
+    "colorspace_linear": "Linear - normal maps, masks, data",
+    "colorspace_tooltip": "sRGB: stored as a *_SRGB format, mipmaps are averaged in linear light.\nLinear: stored as UNORM, pixel values are written unchanged.\nImageMagick writes legacy DDS files that cannot carry the sRGB flag.",
+
+    "mipmaps_auto": "Full chain (down to 1x1)",
+    "mipmaps_none": "No mipmaps",
+    "mipmaps_count": "{count} extra level(s)",
+
+    "quality_fast": "Fast",
+    "quality_normal": "Normal",
+    "quality_best": "Best (slow)",
+
+    "encoder_auto": "Automatic (Cuttlefish if available)",
+    "encoder_cuttlefish": "Cuttlefish",
+    "encoder_imagemagick": "ImageMagick",
+
+    "use_original_export_name": "Use the document name for the temporary export file",
+    "use_original_import_name": "Use the DDS file name for the imported document",
+    "export_custom_name": "Custom temporary export file name",
+    "export_custom_name_placeholder": "Leave empty to use the document name",
+
+    "magick_path": "ImageMagick",
+    "cuttlefish_path": "Cuttlefish",
+    "path_placeholder": "Empty - detect automatically",
+    "browse": "Browse...",
+    "tool_found": "found: {path}",
+    "tool_not_found": "not found",
+
+    "save_as_default": "Remember these settings",
+    "save": "Save",
+    "ok": "OK",
+    "cancel": "Cancel",
+    "settings_saved": "Settings saved.",
+
+    "title_error": "DDS Evrika - error",
+    "title_done": "DDS Evrika",
+    "file_filter_dds": "DDS textures (*.dds *.DDS)",
+    "export_done": "Saved {path}\nFormat: {format}, color space: {colorspace}, encoder: {encoder}",
+    "no_document": "There is no open document to export.",
+    "error_temp_export": "Krita could not save the temporary PNG file.",
+    "error_open": "Krita could not open the converted image: {path}",
+
+    "err_tool_start": "Could not start {tool}.",
+    "err_tool_failed": "{tool} failed with exit code {code}.",
+    "err_not_png": "The temporary file is not a PNG image: {path}",
+    "err_cuttlefish_missing": "Cuttlefish was not found. Use the release archive for your OS (it includes Cuttlefish), install it into PATH or set its path in DDS Evrika Settings.",
+    "err_no_encoder": "Neither Cuttlefish nor ImageMagick was found. See the plugin manual for installation instructions.",
+    "err_im_format_unsupported": "ImageMagick cannot write {format} DDS files, it only supports DXT1, DXT5 and uncompressed. Install Cuttlefish or choose another format.",
+    "err_unknown_compression": "Unknown compression format: {format}",
+    "err_cuttlefish_gray": "Cuttlefish cannot read grayscale images. Convert the document to RGB (Image > Convert Image Color Space) or install ImageMagick.",
+    "err_magick_missing": "ImageMagick was not found. It is required to open DDS files. See the plugin manual for installation instructions."
+}
