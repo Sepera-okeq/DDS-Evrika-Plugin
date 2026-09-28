@@ -117,7 +117,12 @@ def add_windows_binaries(resources, work):
 
 def write_zip(stage, target):
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-        for directory, _, files in os.walk(stage):
+        for directory, dirs, files in os.walk(stage):
+            dirs.sort()
+            # Krita's plugin importer finds the module by its directory entry
+            # ("<name>/"), so directories must be stored explicitly.
+            rel_dir = os.path.relpath(directory, stage).replace(os.sep, "/")
+            z.write(directory, ARCHIVE_ROOT + "/" + ("" if rel_dir == "." else rel_dir + "/"))
             for name in sorted(files):
                 path = os.path.join(directory, name)
                 info = zipfile.ZipInfo.from_file(

@@ -47,6 +47,17 @@ jobs:
         run: command -v 7z || (sudo apt-get update && sudo apt-get install -y p7zip-full)
       - name: Build archives for Windows, Linux, macOS
         run: python tools/build_release.py
+      - name: Check archives with Krita's plugin importer
+        run: |
+          curl -sfL -o plugin_importer.py https://invent.kde.org/graphics/krita/-/raw/master/plugins/python/plugin_importer/plugin_importer.py
+          python - <<'EOF'
+          import builtins, glob, tempfile
+          builtins.i18n = lambda s: s
+          from plugin_importer import PluginImporter
+          for archive in sorted(glob.glob("dist/*.zip")):
+              imported = PluginImporter(archive, tempfile.mkdtemp(), lambda p: True).import_all()
+              print(archive, "->", [p["name"] for p in imported])
+          EOF
       - uses: actions/upload-artifact@v4
         with:
           name: dds_evrika_plugin
