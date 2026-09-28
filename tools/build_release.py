@@ -27,6 +27,8 @@ import zipfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PLUGIN_SRC = os.path.join(ROOT, "DDS_EVRIKA_PLUGIN")
 PLUGIN_NAME = "dds_evrika_plugin"
+# Top-level folder inside the release archives.
+ARCHIVE_ROOT = "DDS_EVRIKA_PLUGIN"
 DIST = os.path.join(ROOT, "dist")
 
 CUTTLEFISH_VERSION = os.environ.get("CUTTLEFISH_VERSION", "2.10.2")
@@ -118,7 +120,8 @@ def write_zip(stage, target):
         for directory, _, files in os.walk(stage):
             for name in sorted(files):
                 path = os.path.join(directory, name)
-                info = zipfile.ZipInfo.from_file(path, os.path.relpath(path, stage))
+                info = zipfile.ZipInfo.from_file(
+                    path, ARCHIVE_ROOT + "/" + os.path.relpath(path, stage).replace(os.sep, "/"))
                 info.compress_type = zipfile.ZIP_DEFLATED
                 # Keep the executable bit for unzip tools that honor it.
                 if os.access(path, os.X_OK) or "/bin/" in path.replace("\\", "/"):

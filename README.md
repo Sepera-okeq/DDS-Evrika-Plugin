@@ -74,7 +74,7 @@ You can also set the path manually in **DDS Evrika Settings**.
 
 ### Manual installation
 
-Unpack the archive into Krita's resource folder
+Copy the contents of the `DDS_EVRIKA_PLUGIN` folder from the archive into Krita's resource folder
 (**Settings → Manage Resources → Open Resource Folder**), `pykrita` subfolder:
 
 | System | Folder |
