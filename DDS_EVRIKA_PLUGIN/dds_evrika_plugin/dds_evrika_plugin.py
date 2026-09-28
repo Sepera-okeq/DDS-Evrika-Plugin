@@ -2,158 +2,274 @@ import os
 import json
 import hashlib
 import shutil
-import subprocess
-from krita import *
-from PyQt5.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QLabel,
-    QComboBox,
-    QPushButton,
-    QLineEdit,
-    QFormLayout,
-    QWidget,
-    QMessageBox,
-    QHBoxLayout,
-    QFileDialog
-)
-from PyQt5.QtCore import QLocale
-from sys import platform
+import tempfile
+import importlib
+from krita import Krita, Extension, InfoObject
 
-# Version 1.1
+from . import dds_tools
+from . import i18n
+from .dds_tools import ToolError
 
-# Обновляем путь для хранения конфигурации рядом с Krita
+VERSION = "1.3.0"
+
+
+def _krita_major_version():
+    try:
+        return int(Krita.instance().version().split(".")[0])
+    except (ValueError, AttributeError):
+        return 5
+
+
+def _load_qt():
+    """Krita 6 is built on Qt6/PyQt6, Krita 5 and older on Qt5/PyQt5."""
+    order = ["PyQt6", "PyQt5"] if _krita_major_version() >= 6 else ["PyQt5", "PyQt6"]
+    error = None
+    for package in order:
+        try:
+            return (importlib.import_module(package + ".QtWidgets"),
+                    importlib.import_module(package + ".QtCore"))
+        except ImportError as e:
+            error = e
+    raise error
+
+
+QtWidgets, QtCore = _load_qt()
+QDialog = QtWidgets.QDialog
+QVBoxLayout = QtWidgets.QVBoxLayout
+QHBoxLayout = QtWidgets.QHBoxLayout
+QFormLayout = QtWidgets.QFormLayout
+QGroupBox = QtWidgets.QGroupBox
+QLabel = QtWidgets.QLabel
+QComboBox = QtWidgets.QComboBox
+QPushButton = QtWidgets.QPushButton
+QLineEdit = QtWidgets.QLineEdit
+QCheckBox = QtWidgets.QCheckBox
+QWidget = QtWidgets.QWidget
+QMessageBox = QtWidgets.QMessageBox
+QFileDialog = QtWidgets.QFileDialog
+QLocale = QtCore.QLocale
+
 PLUGIN_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(PLUGIN_DIR, "settings.json")
 
+IMPORT_FORMATS = ["png", "tiff", "bmp", "jpeg", "tga"]
 
-# Чтение и запись в JSON файл
+
 class SettingsManager:
-    def __init__(self):
-        self._settings = {}
-        if not os.path.exists(PLUGIN_DIR):
-            os.makedirs(PLUGIN_DIR)
-        self._load_settings()
+    """Plugin settings stored as JSON next to the plugin."""
 
-    def _load_settings(self):
-        """Загружаем настройки из JSON файла."""
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, 'r') as f:
+    def __init__(self):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 self._settings = json.load(f)
-        else:
+        except (OSError, ValueError):
             self._settings = {}
 
     def save_settings(self):
-        """Сохранение настроек в JSON файл."""
-        with open(CONFIG_FILE, 'w') as f:
-            json.dump(self._settings, f, indent=4)
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(self._settings, f, indent=4)
+        except OSError:
+            pass
 
     def get(self, key, default=None):
-        """Получить значение настройки по ключу."""
         return self._settings.get(key, default)
 
     def set(self, key, value):
-        """Установить или изменить значение настройки."""
         self._settings[key] = value
         self.save_settings()
 
+    def update(self, values):
+        self._settings.update(values)
+        self.save_settings()
 
-class EvrikaSettingsWidget(QWidget):
-    def __init__(self, settings_manager):
+    def export_options(self):
+        return {
+            "compression": self.get("export_compression", "dxt5"),
+            "mipmaps": self.get("export_mipmap", "Auto"),
+            "filter_name": self.get("export_filter", "Lanczos"),
+            "colorspace": self.get("export_colorspace", dds_tools.COLORSPACE_SRGB),
+            "quality": self.get("export_quality", "normal"),
+        }
+
+    def save_export_options(self, options):
+        self.update({
+            "export_compression": options["compression"],
+            "export_mipmap": options["mipmaps"],
+            "export_filter": options["filter_name"],
+            "export_colorspace": options["colorspace"],
+            "export_quality": options["quality"],
+        })
+
+
+def _combo(items, current):
+    """items: list of (label, value)."""
+    combo = QComboBox()
+    for label, value in items:
+        combo.addItem(label, value)
+    index = combo.findData(current)
+    if index >= 0:
+        combo.setCurrentIndex(index)
+    return combo
+
+
+def _ok_cancel(tr, dialog, ok_text=None):
+    layout = QHBoxLayout()
+    layout.addStretch(1)
+    cancel_button = QPushButton(tr("cancel"))
+    ok_button = QPushButton(ok_text or tr("ok"))
+    ok_button.setDefault(True)
+    cancel_button.clicked.connect(dialog.reject)
+    ok_button.clicked.connect(dialog.accept)
+    layout.addWidget(cancel_button)
+    layout.addWidget(ok_button)
+    return layout
+
+
+class ExportOptionsForm(QFormLayout):
+    """Export options shared by the settings dialog and "Export DDS as..."."""
+
+    def __init__(self, tr, options):
         super().__init__()
-        self.settings = settings_manager
-        locale = QLocale.system()
-        lang = locale.name()
+        self.compression_combo = _combo(
+            [(tr("format_" + key), key) for key in dds_tools.COMPRESSION_FORMATS],
+            options["compression"])
+        self.colorspace_combo = _combo(
+            [(tr("colorspace_" + cs), cs) for cs in dds_tools.COLORSPACES], options["colorspace"])
+        self.colorspace_combo.setToolTip(tr("colorspace_tooltip"))
+        self.mipmap_combo = _combo(
+            [(tr("mipmaps_auto"), "Auto"), (tr("mipmaps_none"), "None")] +
+            [(tr("mipmaps_count", count=value), value) for value in dds_tools.MIPMAP_CHOICES[2:]],
+            options["mipmaps"])
+        self.filter_combo = _combo([(f, f) for f in dds_tools.FILTERS], options["filter_name"])
+        self.quality_combo = _combo(
+            [(tr("quality_" + q), q) for q in dds_tools.QUALITIES], options["quality"])
 
-        if lang.startswith("ru"):
-            self.locale_ru()
-        else:
-            self.locale_en()
+        self.addRow(tr("compression_format"), self.compression_combo)
+        self.addRow(tr("colorspace"), self.colorspace_combo)
+        self.addRow(tr("mipmaps"), self.mipmap_combo)
+        self.addRow(tr("mipmap_filter"), self.filter_combo)
+        self.addRow(tr("quality"), self.quality_combo)
 
+    def options(self):
+        return {
+            "compression": self.compression_combo.currentData(),
+            "mipmaps": self.mipmap_combo.currentData(),
+            "filter_name": self.filter_combo.currentData(),
+            "colorspace": self.colorspace_combo.currentData(),
+            "quality": self.quality_combo.currentData(),
+        }
+
+
+class EvrikaSettingsDialog(QDialog):
+    def __init__(self, settings, tr):
+        super().__init__()
+        self.settings = settings
+        self.tr_ = tr
+        self.setWindowTitle(tr("action_settings"))
         layout = QVBoxLayout(self)
 
-        self.temp_export_check = QCheckBox(self.translations["use_original_export_name"])
-        self.temp_import_check = QCheckBox(self.translations["use_original_import_name"])
-        self.export_name_input = QLineEdit()
-        self.export_name_input.setPlaceholderText(self.translations["export_custom_name"])
+        # Export
+        export_box = QGroupBox(tr("section_export"))
+        self.export_form = ExportOptionsForm(tr, settings.export_options())
+        self.encoder_combo = _combo(
+            [(tr("encoder_" + e), e) for e in dds_tools.ENCODERS],
+            settings.get("encoder", dds_tools.ENCODER_AUTO))
+        self.export_form.addRow(tr("encoder"), self.encoder_combo)
+        export_box.setLayout(self.export_form)
+        layout.addWidget(export_box)
 
-        self.temp_export_check.setChecked(self.settings.get("use_original_export_name", False))
-        self.temp_import_check.setChecked(self.settings.get("use_original_import_name", False))
-        self.export_name_input.setText(self.settings.get("export_custom_name", ""))
+        # Import
+        import_box = QGroupBox(tr("section_import"))
+        import_form = QFormLayout(import_box)
+        self.import_format_combo = _combo([(f.upper(), f) for f in IMPORT_FORMATS],
+                                          settings.get("import_format", "png"))
+        import_form.addRow(tr("import_format"), self.import_format_combo)
+        layout.addWidget(import_box)
 
-        form_layout = QFormLayout()
-        self.import_format_combo = QComboBox()
-        self.import_format_combo.addItems(["png", "tiff", "bmp", "jpeg", "tga"])
-        self.import_format_combo.setCurrentText(self.settings.get("import_format", "png"))
+        # Temporary file names
+        names_box = QGroupBox(tr("section_names"))
+        names_layout = QVBoxLayout(names_box)
+        self.export_name_check = QCheckBox(tr("use_original_export_name"))
+        self.export_name_check.setChecked(settings.get("use_original_export_name", False))
+        self.import_name_check = QCheckBox(tr("use_original_import_name"))
+        self.import_name_check.setChecked(settings.get("use_original_import_name", False))
+        self.export_name_input = QLineEdit(settings.get("export_custom_name", ""))
+        self.export_name_input.setPlaceholderText(tr("export_custom_name_placeholder"))
+        names_layout.addWidget(self.export_name_check)
+        names_layout.addWidget(self.import_name_check)
+        names_layout.addWidget(QLabel(tr("export_custom_name")))
+        names_layout.addWidget(self.export_name_input)
+        layout.addWidget(names_box)
 
-        self.export_compression_combo = QComboBox()
-        self.export_compression_combo.addItems(["dxt1", "dxt3", "dxt5", "bc7", "none"])
-        self.export_compression_combo.setCurrentText(self.settings.get("export_compression", "dxt1"))
+        # External tools
+        tools_box = QGroupBox(tr("section_tools"))
+        tools_form = QFormLayout(tools_box)
+        self.magick_input, self.magick_status = self._add_tool_row(
+            tools_form, tr("magick_path"), settings.get("magick_path", ""))
+        self.cuttlefish_input, self.cuttlefish_status = self._add_tool_row(
+            tools_form, tr("cuttlefish_path"), settings.get("cuttlefish_path", ""))
+        layout.addWidget(tools_box)
+        self.update_tools_status()
 
-        self.export_mipmap_combo = QComboBox()
-        self.export_mipmap_combo.addItems(["1", "2", "3", "4", "5", "Auto"])
-        self.export_mipmap_combo.setCurrentText(self.settings.get("export_mipmap", "Auto"))
+        # Interface
+        interface_box = QGroupBox(tr("section_interface"))
+        interface_form = QFormLayout(interface_box)
+        self.language_combo = _combo(
+            [(tr("language_auto"), i18n.AUTO)] + [(name, code) for code, name in i18n.available_languages()],
+            settings.get("language", i18n.AUTO))
+        interface_form.addRow(tr("language"), self.language_combo)
+        layout.addWidget(interface_box)
 
-        self.export_filter_combo = QComboBox()
-        self.export_filter_combo.addItems(["Undefined", "Point", "Box", "Triangle", "Hermite", "Hanning", "Hamming", "Blackman", "Gaussian", "Quadratic", "Cubic", "Catrom", "Mitchell", "Jinc", "Sinc", "SincFast", "Kaiser", "Welch", "Parzen", "Bohman", "Bartlett", "Lagrange", "Lanczos", "LanczosSharp", "Lanczos2", "Lanczos2Sharp", "Robidoux", "RobidouxSharp", "Cosine", "Spline", "Sentinel"])
-        self.export_filter_combo.setCurrentText(self.settings.get("export_filter", "Lanczos"))
+        layout.addLayout(_ok_cancel(tr, self, tr("save")))
 
-        form_layout.addRow(self.translations["import_format"], self.import_format_combo)
-        form_layout.addRow(self.translations["export_compression"], self.export_compression_combo)
-        form_layout.addRow(self.translations["export_mipmap"], self.export_mipmap_combo)
-        form_layout.addRow(self.translations["export_filter"], self.export_filter_combo)
+    def _add_tool_row(self, form, label, value):
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        line_edit = QLineEdit(value)
+        line_edit.setPlaceholderText(self.tr_("path_placeholder"))
+        browse = QPushButton(self.tr_("browse"))
 
-        save_button = QPushButton(self.translations["save_settings"])
-        save_button.clicked.connect(self.save_settings)
+        def pick():
+            path = QFileDialog.getOpenFileName(self, self.tr_("browse"))[0]
+            if path:
+                line_edit.setText(path)
+                self.update_tools_status()
 
-        layout.addWidget(QLabel("<b>{}</b>".format(self.translations["temporary_file_settings"])))
-        layout.addWidget(self.temp_export_check)
-        layout.addWidget(self.temp_import_check)
-        layout.addWidget(QLabel(self.translations["custom_export_name"]))
-        layout.addWidget(self.export_name_input)
-        layout.addLayout(form_layout)
-        layout.addWidget(save_button)
+        browse.clicked.connect(pick)
+        line_edit.editingFinished.connect(self.update_tools_status)
+        row_layout.addWidget(line_edit)
+        row_layout.addWidget(browse)
+        status = QLabel()
+        status.setWordWrap(True)
+        form.addRow(label, row)
+        form.addRow("", status)
+        return line_edit, status
 
-    def locale_ru(self):
-        self.translations = {
-            "use_original_export_name": "Использовать исходное имя при экспорте",
-            "use_original_import_name": "Использовать исходное имя при импорте",
-            "export_custom_name": "Введите пользовательское название файла для экспорта",
-            "import_format": "Формат (импорт)",
-            "export_compression": "Компрессия (экспорт)",
-            "export_mipmap": "Уровни Mipmap (экспорт)",
-            "export_filter": "Фильтр (экспорт)",
-            "save_settings": "Сохранить настройки",
-            "temporary_file_settings": "Настройки временных файлов",
-            "custom_export_name": "Кастомное имя файла для экспорта",
-            "saved_seccess_settings": "Настройки успешно сохранены"
-        }
+    def update_tools_status(self):
+        for finder, line_edit, status in (
+                (dds_tools.find_imagemagick, self.magick_input, self.magick_status),
+                (dds_tools.find_cuttlefish, self.cuttlefish_input, self.cuttlefish_status)):
+            path = finder(line_edit.text().strip())
+            status.setText(self.tr_("tool_found", path=path) if path else self.tr_("tool_not_found"))
 
-    def locale_en(self):
-        self.translations = {
-            "use_original_export_name": "Use original name when exporting",
-            "use_original_import_name": "Use original name when importing",
-            "export_custom_name": "Enter custom export file name",
-            "import_format": "Format (import)",
-            "export_compression": "Compression (export)",
-            "export_mipmap": "Mipmap Levels (export)",
-            "export_filter": "Filter (export)",
-            "save_settings": "Save settings",
-            "temporary_file_settings": "Temporary file settings",
-            "custom_export_name": "Custom export file name",
-            "saved_seccess_settings": "Settings saved successfully"
-        }
-
-    def save_settings(self):
-        """Save current settings through the SettingsManager."""
-        self.settings.set("use_original_export_name", self.temp_export_check.isChecked())
-        self.settings.set("use_original_import_name", self.temp_import_check.isChecked())
-        self.settings.set("export_custom_name", self.export_name_input.text())
-        self.settings.set("import_format", self.import_format_combo.currentText())
-        self.settings.set("export_compression", self.export_compression_combo.currentText())
-        self.settings.set("export_mipmap", self.export_mipmap_combo.currentText())
-        self.settings.set("export_filter", self.export_filter_combo.currentText())
-        QMessageBox.information(self, "Evrika Settings", self.translations["saved_seccess_settings"])
+    def accept(self):
+        language_changed = self.language_combo.currentData() != self.settings.get("language", i18n.AUTO)
+        self.settings.update({
+            "encoder": self.encoder_combo.currentData(),
+            "import_format": self.import_format_combo.currentData(),
+            "use_original_export_name": self.export_name_check.isChecked(),
+            "use_original_import_name": self.import_name_check.isChecked(),
+            "export_custom_name": self.export_name_input.text().strip(),
+            "magick_path": self.magick_input.text().strip(),
+            "cuttlefish_path": self.cuttlefish_input.text().strip(),
+            "language": self.language_combo.currentData(),
+        })
+        self.settings.save_export_options(self.export_form.options())
+        if language_changed:
+            QMessageBox.information(self, self.tr_("title_done"), self.tr_("language_restart"))
+        super().accept()
 
 
 class DDSEvrikaPlugin(Extension):
@@ -161,374 +277,153 @@ class DDSEvrikaPlugin(Extension):
     def __init__(self, parent):
         super().__init__(parent)
         self.settings = SettingsManager()
-        self.init_translations()
-        
+        self.tr = i18n.Translator(self.settings.get("language", i18n.AUTO),
+                                  QLocale.system().uiLanguages())
+
     def setup(self):
         pass
 
-    def init_translations(self):
-        locale = QLocale.system()
-        lang = locale.name()
-
-        if lang.startswith("ru"):
-            self.translations = {
-                "import_dds": "Импортировать DDS",
-                "import_dds_as": "Импортировать DDS как...",
-                "export_dds": "Экспортировать DDS",
-                "export_dds_as": "Экспортировать DDS как...",
-                "compression_format": "Выберите формат сжатия",
-                "use_saved_settings": "Использовать мои настройки",
-                "overwrite_settings": "Перезаписать текущие настройки",
-                "mipmap_levels": "Уровни Mipmap",
-                "export_filter": "Фильтр (экспорт)",
-                "ok": "ОК",
-                "cancel": "Отмена",
-                "error": "Ошибка",
-                "error_processing": "Ошибка при обработке файла: ",
-                "file_saved": "Файл успешно сохранён в формате DDS: ",
-                "no_document": "Нет активного документа для экспорта.",
-                "settings": "Настройки Evrika",
-                "import_format": "Выберите формат изображения"
-            }
-        else:
-            self.translations = {
-                "import_dds": "Import DDS",
-                "import_dds_as": "Import DDS as...",
-                "export_dds": "Export DDS",
-                "export_dds_as": "Export DDS as...",
-                "compression_format": "Select compression format",
-                "use_saved_settings": "Use my settings",
-                "overwrite_settings": "Overwrite current settings",
-                "mipmap_levels": "Mipmap levels",
-                "export_filter": "Filter (export)",
-                "ok": "OK",
-                "cancel": "Cancel",
-                "error": "Error",
-                "error_processing": "Error processing file: ",
-                "file_saved": "File successfully saved as DDS: ",
-                "no_document": "No active document to export.",
-                "settings": "Evrika Settings",
-                "import_format": "Select image format"
-            }
-
     def createActions(self, window):
-        action_import = window.createAction("ER_DDS_IMPORTER", self.translations["import_dds"], "tools/scripts")
-        action_import.triggered.connect(self.importDDS)
-        
-        action_export = window.createAction("ER_DDS_EXPORTER", self.translations["export_dds"], "tools/scripts")
-        action_export.triggered.connect(self.exportDDS)
-
-        action_import_as = window.createAction("ER_DDS_IMPORTER_AS", self.translations["import_dds_as"], "tools/scripts")
-        action_import_as.triggered.connect(self.importDDSAs)
-        
-        action_export_as = window.createAction("ER_DDS_EXPORTER_AS", self.translations["export_dds_as"], "tools/scripts")
-        action_export_as.triggered.connect(self.exportDDSAs)
-
-        action_settings = window.createAction("EVRIKA_SETTINGS", self.translations["settings"], "tools/scripts")
-        action_settings.triggered.connect(self.showSettingsDialog)
+        for action_id, key, handler in (
+                ("ER_DDS_IMPORTER", "action_import", self.importDDS),
+                ("ER_DDS_IMPORTER_AS", "action_import_as", self.importDDSAs),
+                ("ER_DDS_EXPORTER", "action_export", self.exportDDS),
+                ("ER_DDS_EXPORTER_AS", "action_export_as", self.exportDDSAs),
+                ("EVRIKA_SETTINGS", "action_settings", self.showSettingsDialog)):
+            action = window.createAction(action_id, self.tr(key), "tools/scripts")
+            action.triggered.connect(handler)
 
     def showSettingsDialog(self):
-        dialog = QDialog()
-        layout = QVBoxLayout(dialog)
-        settings_widget = EvrikaSettingsWidget(self.settings)
-        layout.addWidget(settings_widget)
-        dialog.setWindowTitle(self.translations["settings"])
-        dialog.exec_()
+        EvrikaSettingsDialog(self.settings, self.tr).exec()
 
     def generate_temp_filename(self, original_file_path, new_extension=".png", for_export=False):
         use_original_name = self.settings.get("use_original_export_name", False) if for_export else \
                             self.settings.get("use_original_import_name", False)
+        original_name = os.path.splitext(os.path.basename(original_file_path))[0] or "untitled"
 
         if use_original_name:
             if for_export:
                 custom_name = self.settings.get("export_custom_name", "")
                 if custom_name:
                     return f"{custom_name}{new_extension}"
-            return os.path.splitext(os.path.basename(original_file_path))[0] + new_extension
-        else:
-            original_filename = os.path.basename(original_file_path)
-            original_name, _ = os.path.splitext(original_filename)
-            sha256_hash = hashlib.sha256(original_name.encode()).hexdigest()
-            return f"temp_{original_name}_{sha256_hash[:8]}{new_extension}"
+            return original_name + new_extension
+        sha256_hash = hashlib.sha256(original_name.encode()).hexdigest()
+        return f"temp_{original_name}_{sha256_hash[:8]}{new_extension}"
+
+    # ----- Import -----
 
     def importDDS(self):
-        input_file = QFileDialog().getOpenFileName(caption=self.translations["import_dds"], filter="DDS files (*.dds)")[0]
-        if not input_file:
-            return
-
-        # Используем self.settings.get(), а не self.settings.get()
-        temp_filename = self.generate_temp_filename(input_file, f".{self.settings.get('import_format', 'png')}")
-        temp_directory_location = os.path.join(os.path.dirname(__file__), 'temp_dds_import')
-        if not os.path.isdir(temp_directory_location):
-            os.makedirs(temp_directory_location)
-
-        output_file = os.path.join(temp_directory_location, temp_filename)
-        imagick_path = os.path.join(os.path.dirname(__file__), 'resources', 'magick.exe') if platform == "win32" else 'magick'
-        args = [imagick_path, input_file, output_file]
-
-        try:
-            subprocess.run(args, check=True)
-            new_document = Krita.instance().openDocument(output_file)
-            Krita.instance().activeWindow().addView(new_document)
-            shutil.rmtree(temp_directory_location)
-        except subprocess.CalledProcessError as e:
-            self.showError(self.translations["error_processing"] + str(e))
+        self.import_file(self.settings.get("import_format", "png"))
 
     def importDDSAs(self):
         dialog = QDialog()
-        layout = QVBoxLayout(dialog)
+        dialog.setWindowTitle(self.tr("action_import_as"))
+        layout = QFormLayout(dialog)
+        format_combo = _combo([(f.upper(), f) for f in IMPORT_FORMATS],
+                              self.settings.get("import_format", "png"))
+        layout.addRow(self.tr("import_format"), format_combo)
+        layout.addRow(_ok_cancel(self.tr, dialog))
+        if dialog.exec():
+            self.import_file(format_combo.currentData())
 
-        format_label = QLabel(self.translations["import_format"])
-        layout.addWidget(format_label)
-
-        format_combo = QComboBox()
-        format_combo.addItems(["png", "tiff", "bmp", "jpeg", "tga"])
-        layout.addWidget(format_combo)
-
-        buttons_layout = QHBoxLayout()
-        confirm_button = QPushButton(self.translations["ok"])
-        cancel_button = QPushButton(self.translations["cancel"])
-        buttons_layout.addWidget(cancel_button)
-        buttons_layout.addWidget(confirm_button)
-        layout.addLayout(buttons_layout)
-
-        def process_import_as():
-            input_file = QFileDialog().getOpenFileName(caption=self.translations["import_dds"], filter="DDS files (*.dds)")[0]
-            if not input_file:
-                return
-
-            temp_filename = self.generate_temp_filename(input_file, f".{format_combo.currentText()}")
-            temp_directory_location = os.path.join(os.path.dirname(__file__), 'temp_dds_import')
-            if not os.path.isdir(temp_directory_location):
-                os.makedirs(temp_directory_location)
-
-            output_file = os.path.join(temp_directory_location, temp_filename)
-            imagick_path = os.path.join(os.path.dirname(__file__), 'resources', 'magick.exe') if platform == "win32" else 'magick'
-            args = [imagick_path, input_file, output_file]
-
-            try:
-                subprocess.run(args, check=True)
-                new_document = Krita.instance().openDocument(output_file)
-                Krita.instance().activeWindow().addView(new_document)
-                shutil.rmtree(temp_directory_location)
-                dialog.accept()  # Закрываем диалог при успешной обработке
-            except subprocess.CalledProcessError as e:
-                self.showError(self.translations["error_processing"] + str(e))
-                dialog.reject()  # Закрываем диалог, если произошла ошибка
-
-        confirm_button.clicked.connect(process_import_as)
-        cancel_button.clicked.connect(dialog.reject)
-        dialog.exec_()
-
-    def exportDDS(self):
-        """Обычный экспорт DDS с использованием сохранённых настроек."""
-        self.process_export(is_export_as=False)
-
-    def exportDDSAs(self):
-        self.showImportExportDialog(is_import=False)
-
-    def process_export(self, is_export_as):
-        doc = Krita.instance().activeDocument()
-        if not doc:
-            self.showError(self.translations["no_document"])
-            return
-
-        save_file, _ = QFileDialog.getSaveFileName(caption=self.translations["export_dds"], filter="DDS files (*.dds)")
-        if not save_file:
-            return
-        if not save_file.lower().endswith(".dds"):
-            save_file += ".dds"
-
-        temp_filename = self.generate_temp_filename(doc.fileName(), ".png", for_export=True)
-        temp_directory_location = os.path.join(os.path.dirname(__file__), "temp_dds_export")
-        if not os.path.isdir(temp_directory_location):
-            os.makedirs(temp_directory_location)
-
-        temp_png_file = os.path.join(temp_directory_location, temp_filename)
-        doc.saveAs(temp_png_file)
-
-        imagick_path = os.path.join(os.path.dirname(__file__), "resources", "magick.exe") if platform == "win32" else "magick"
-        args = [imagick_path, temp_png_file]
-
-        compression_format = self.settings.get("export_compression", "dxt1")
-        mipmap_levels = self.settings.get("export_mipmap", "Auto")
-        export_filter = self.settings.get("export_filter", "Lanczos")  # Get the export filter setting
-
-        args.extend(["-define", f"dds:compression={compression_format.lower()}"])
-
-        if mipmap_levels != "Auto":
-            args.extend(["-define", f"dds:mipmaps={mipmap_levels}"])
-        
-        # Add the filter option to the ImageMagick command
-        args.extend(["-filter", export_filter.lower()])
-
-        args.append(save_file)
-
-        try:
-            subprocess.run(args, check=True)
-            self.showMessage(self.translations["file_saved"] + save_file)
-        except subprocess.CalledProcessError as e:
-            self.showError(self.translations["error_processing"] + str(e))
-        finally:
-            shutil.rmtree(temp_directory_location)
-
-    def showImportExportDialog(self, is_import=True):
-        dialog = QDialog()
-        layout = QVBoxLayout(dialog)
-
-        compression_label = QLabel(self.translations["compression_format"])
-        layout.addWidget(compression_label)
-
-        compression_format = QComboBox()
-        compression_format.addItems(["dxt1", "dxt3", "dxt5", "bc7", "none"])
-        layout.addWidget(compression_format)
-
-        mipmaps_label = QLabel(self.translations["mipmap_levels"])
-        layout.addWidget(mipmaps_label)
-        mipmaps_combo = QComboBox()
-        mipmaps_combo.addItems(["Auto", "1", "2", "3", "4", "5"])
-        layout.addWidget(mipmaps_combo)
-
-        # Добавляем Label и ComboBox для выбора фильтра
-        filter_label = QLabel(self.translations["export_filter"])
-        layout.addWidget(filter_label)
-
-        filter_combo = QComboBox()
-        filter_combo.addItems(["Lanczos", "Undefined", "Point", "Box", "Triangle", "Hermite", "Hanning", "Hamming", "Blackman", "Gaussian", "Quadratic", "Cubic", "Catrom", "Mitchell", "Jinc", "Sinc", "SincFast", "Kaiser", "Welch", "Parzen", "Bohman", "Bartlett", "Lagrange", "LanczosSharp", "Lanczos2", "Lanczos2Sharp", "Robidoux", "RobidouxSharp", "Cosine", "Spline", "Sentinel"])
-        layout.addWidget(filter_combo)
-
-        overwrite_checkbox = QCheckBox(self.translations.get("overwrite_settings", "Overwrite current settings"))
-        layout.addWidget(overwrite_checkbox)
-
-        buttons_layout = QHBoxLayout()
-        confirm_button = QPushButton(self.translations["ok"])
-        cancel_button = QPushButton(self.translations["cancel"])
-        buttons_layout.addWidget(cancel_button)
-        buttons_layout.addWidget(confirm_button)
-        layout.addLayout(buttons_layout)
-
-        def save_temporary_settings():
-            compression = compression_format.currentText()
-            mipmaps = mipmaps_combo.currentText()
-            filter_option = filter_combo.currentText()  # Получаем значение фильтра
-            overwrite = overwrite_checkbox.isChecked()
-
-            if overwrite:
-                self.save_user_preferences(compression, mipmaps, filter_option)
-
-            if is_import:  # Для импорта
-                self.process_import_dialog(compression, mipmaps)
-            else:  # Для экспорта
-                self.process_export_dialog(compression, mipmaps, filter_option)
-                
-            dialog.accept()
-
-        confirm_button.clicked.connect(save_temporary_settings)
-        cancel_button.clicked.connect(dialog.reject)
-        dialog.exec_()
-
-    def process_import_dialog(self, compression_format, mipmap_levels):
-        input_file = QFileDialog().getOpenFileName(caption=self.translations["import_dds"], filter="DDS files (*.dds)")[0]
+    def import_file(self, image_format):
+        input_file = QFileDialog.getOpenFileName(None, self.tr("action_import"),
+                                                 self.settings.get("last_import_dir", ""),
+                                                 self.tr("file_filter_dds"))[0]
         if not input_file:
             return
+        self.settings.set("last_import_dir", os.path.dirname(input_file))
 
-        temp_filename = self.generate_temp_filename(input_file, ".png")
-        temp_directory_location = os.path.join(os.path.dirname(__file__), 'temp_dds_import')
-        if not os.path.isdir(temp_directory_location):
-            os.makedirs(temp_directory_location)
-
-        output_file = os.path.join(temp_directory_location, temp_filename)
-        imagick_path = os.path.join(os.path.dirname(__file__), 'resources', 'magick.exe') if platform == "win32" else 'magick'
-        args = [imagick_path, input_file, output_file]
-
-        #if compression_format != "none":
-        #    args.extend(['-define', f'dds:compression={compression_format.lower()}'])
-        #if mipmap_levels != "Auto":
-        #    args.extend(['-define', f'dds:mipmaps={mipmap_levels}'])
-
+        temp_dir = tempfile.mkdtemp(prefix="evrika_import_")
         try:
-            subprocess.run(args, check=True)
+            output_file = os.path.join(temp_dir, self.generate_temp_filename(input_file, "." + image_format))
+            dds_tools.import_dds(input_file, output_file, self.settings.get("magick_path", ""), temp_dir)
             new_document = Krita.instance().openDocument(output_file)
+            if new_document is None:
+                self.showError(self.tr("error_open", path=output_file))
+                return
             Krita.instance().activeWindow().addView(new_document)
-        except subprocess.CalledProcessError as e:
-            self.showError(self.translations["error_processing"] + str(e))
+        except ToolError as e:
+            self.showError(self.tr.error(e))
         finally:
-            shutil.rmtree(temp_directory_location)
+            shutil.rmtree(temp_dir, ignore_errors=True)
 
-    def process_export_dialog(self, compression_format, mipmap_levels, filter_option):
-        """Процесс экспорта с исправлением для обработки компрессии 'none'"""
+    # ----- Export -----
+
+    def exportDDS(self):
+        """Export with the saved settings."""
+        self.export_document(self.settings.export_options())
+
+    def exportDDSAs(self):
+        dialog = QDialog()
+        dialog.setWindowTitle(self.tr("action_export_as"))
+        layout = QVBoxLayout(dialog)
+        form = ExportOptionsForm(self.tr, self.settings.export_options())
+        layout.addLayout(form)
+        remember_checkbox = QCheckBox(self.tr("save_as_default"))
+        layout.addWidget(remember_checkbox)
+        layout.addLayout(_ok_cancel(self.tr, dialog))
+        if not dialog.exec():
+            return
+        options = form.options()
+        if remember_checkbox.isChecked():
+            self.settings.save_export_options(options)
+        self.export_document(options)
+
+    def export_document(self, options):
         doc = Krita.instance().activeDocument()
-        
         if not doc:
-            self.showError(self.translations["no_document"])
+            self.showError(self.tr("no_document"))
             return
 
-        # Сохранение файла DDS
-        save_file, _ = QFileDialog.getSaveFileName(caption=self.translations["export_dds"], filter="DDS files (*.dds)")
+        doc_name = os.path.splitext(os.path.basename(doc.fileName()))[0] or doc.name() or "untitled"
+        start_dir = self.settings.get("last_export_dir", "") or os.path.dirname(doc.fileName())
+        save_file = QFileDialog.getSaveFileName(None, self.tr("action_export"),
+                                                os.path.join(start_dir, doc_name + ".dds"),
+                                                self.tr("file_filter_dds"))[0]
         if not save_file:
             return
         if not save_file.lower().endswith(".dds"):
             save_file += ".dds"
+        self.settings.set("last_export_dir", os.path.dirname(save_file))
 
-        # Генерация временного файла PNG
-        temp_filename = self.generate_temp_filename(doc.fileName(), ".png", for_export=True)
-        temp_directory_location = os.path.join(os.path.dirname(__file__), "temp_dds_export")
-        if not os.path.isdir(temp_directory_location):
-            os.makedirs(temp_directory_location)
-
-        temp_png_file = os.path.join(temp_directory_location, temp_filename)
-        doc.saveAs(temp_png_file)
-
-        # Путь для работы с ImageMagick
-        imagick_path = os.path.join(os.path.dirname(__file__), "resources", "magick.exe") if platform == "win32" else "magick"
-
-        # Создаем список аргументов для команды
-        args = [imagick_path, temp_png_file]
-
-        # Добавляем фильтр
-        if filter_option:
-            args.extend(["-filter", filter_option])
-
-        # Указываем формат компрессии, включая "none"
-        args.extend(["-define", f"dds:compression={compression_format.lower()}"])
-
-        # Добавляем количество уровней Mipmap, если оно не "Auto"
-        if mipmap_levels != "Auto":
-            args.extend(["-define", f"dds:mipmaps={mipmap_levels}"])
-
-        # Даем команду сохранить файл в формате DDS
-        args.append(save_file)
-
-        # Показываем финальную версию аргументов команды для ImageMagick
-        #QMessageBox.information(None, "Отладка", f"Сформированная команда для ImageMagick:\n{' '.join(args)}")
-
+        temp_dir = tempfile.mkdtemp(prefix="evrika_export_")
+        batchmode = doc.batchmode()
         try:
-            # Запускаем команду через subprocess
-            subprocess.run(args, check=True)
-            self.showMessage(self.translations["file_saved"] + save_file)  # Сообщаем об успешном сохранении
-        except subprocess.CalledProcessError as e:
-            self.showError(self.translations["error_processing"] + str(e))
-        finally:
-            shutil.rmtree(temp_directory_location)  # Удаляем временные файлы
+            temp_png_file = os.path.join(temp_dir, self.generate_temp_filename(doc.fileName(), ".png",
+                                                                               for_export=True))
+            # exportImage (unlike saveAs) does not rebind the document to the temporary file.
+            info = InfoObject()
+            info.setProperty("alpha", True)
+            info.setProperty("compression", 1)
+            info.setProperty("forceSRGB", False)
+            info.setProperty("saveSRGBProfile", False)
+            doc.setBatchmode(True)
+            doc.waitForDone()
+            if not doc.exportImage(temp_png_file, info) or not os.path.isfile(temp_png_file):
+                self.showError(self.tr("error_temp_export"))
+                return
 
-    def save_user_preferences(self, compression, mipmaps, filter_option):
-        """Сохраняем пользовательские параметры экспорта, включая фильтр"""
-        self.settings.set("saved_compression", compression)
-        self.settings.set("saved_mipmap", mipmaps)
-        self.settings.set("saved_filter", filter_option)
+            encoder = dds_tools.export_dds(
+                temp_png_file, save_file,
+                encoder=self.settings.get("encoder", dds_tools.ENCODER_AUTO),
+                magick_path=self.settings.get("magick_path", ""),
+                cuttlefish_path=self.settings.get("cuttlefish_path", ""),
+                **options)
+            self.showMessage(self.tr("export_done", path=save_file,
+                                     format=dds_tools.COMPRESSION_FORMATS[options["compression"]][0],
+                                     colorspace=self.tr("colorspace_" + options["colorspace"]),
+                                     encoder=self.tr("encoder_" + encoder)))
+        except ToolError as e:
+            self.showError(self.tr.error(e))
+        finally:
+            doc.setBatchmode(batchmode)
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    # ----- Messages -----
 
     def showError(self, message):
-        messageBox = QMessageBox()
-        messageBox.setWindowTitle(self.translations["error"])
-        messageBox.setIcon(QMessageBox.Critical)
-        messageBox.setText(message)
-        messageBox.setStandardButtons(QMessageBox.Close)
-        messageBox.exec()
+        QMessageBox.critical(None, self.tr("title_error"), message)
 
     def showMessage(self, message):
-        messageBox = QMessageBox()
-        messageBox.setWindowTitle(self.translations["file_saved"])
-        messageBox.setIcon(QMessageBox.Information)
-        messageBox.setText(message)
-        messageBox.setStandardButtons(QMessageBox.Close)
-        messageBox.exec()
+        QMessageBox.information(None, self.tr("title_done"), message)

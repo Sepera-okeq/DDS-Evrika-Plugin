@@ -1,3 +1,5 @@
+from krita import Krita
+
 from .dds_evrika_plugin import DDSEvrikaPlugin
 
 # Registering the plugin in Krita
