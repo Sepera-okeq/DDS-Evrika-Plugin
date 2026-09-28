@@ -1,129 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Krita DDS Evrika Plugin Documentation</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.5;
-            margin: 20px;
-            max-width: 800px;
-        }
-
-        p {
-            margin-bottom: 1em;
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DDS Evrika Plugin - Manual</title>
+<!-- Krita shows this file in a QTextBrowser, which supports only basic HTML 4 and CSS. -->
+<style>
+body { font-family: sans-serif; line-height: 1.4; max-width: 50em; }
+code { font-family: monospace; }
+th { text-align: left; }
+td, th { padding: 2px 8px 2px 0; vertical-align: top; }
+</style>
 </head>
-
 <body>
-    <header>
-        <h1>Krita DDS Evrika Plugin - User Manual (Updated 1.2)</h1>
-    </header>
 
-    <main>
-        <section id="introduction">
-            <h2>Introduction</h2>
-            <p>The DDS Evrika Plugin is an extension for <strong>Krita</strong>, enabling users to import and export DDS
-               image files using ImageMagick. DDS (DirectDraw Surface) is a popular format for storing textures and
-               images optimized for real-time rendering, often used in video games and 3D applications.</p>
-            <p>This updated version introduces the ability to choose filters during export (Lanczos, Box, and more), 
-               customizable import/export settings, mipmap levels, and integration with Krita's scripting interface 
-               for a more flexible workflow.</p>
-        </section>
+<h1>DDS Evrika Plugin 1.3</h1>
+<p><a href="#en">English</a> | <a href="#ru">Русский</a></p>
 
-        <section id="installation">
-            <h2>Installation</h2>
-            <ol>
-                <li>Download the plugin files.</li>
-                <li>Copy the plugin directory to Krita's plugin folder:</li>
-                <ul>
-                    <li>Windows: <code>C:\Users\<YourUser>\AppData\Roaming\krita\pykrita</code></li>
-                    <li>Linux: <code>~/.local/share/krita/pykrita</code></li>
-                </ul>
-                <li>Ensure that ImageMagick is installed and available in the "resources" folder of the plugin.</li>
-                <li>Restart Krita after copying the plugin files.</li>
-                <li>Activate the plugin from the Krita interface via <em>"Tools > Scripts > Evrika DDS Plugin".</em></li>
-            </ol>
-        </section>
+<h2 id="en"><a name="en"></a>English</h2>
 
-        <section id="usage">
-            <h2>Usage</h2>
+<p>Import and export DirectDraw Surface (<code>.dds</code>) textures: BC1&ndash;BC7 compression,
+sRGB or linear color space, mipmaps for any texture size. Works in Krita 5 and Krita 6.</p>
 
-            <h3>Importing DDS Files</h3>
-            <p>To import a DDS file:</p>
-            <ol>
-                <li>Navigate to <strong>Tools > Scripts > Import DDS</strong>.</li>
-                <li>Select the DDS file you want to open.</li>
-                <li>The file will be converted to a chosen format such as PNG, TIFF, GIF, or TGA (based on your settings).</li>
-                <li>The image will open in Krita after conversion.</li>
-            </ol>
+<h3>Commands</h3>
+<p>All commands are in <b>Tools &gt; Scripts</b>.</p>
+<table>
+<tr><th>Import DDS</th><td>Open a DDS file as a new document.</td></tr>
+<tr><th>Import DDS as...</th><td>Choose the intermediate format (PNG, TIFF, BMP, JPEG, TGA) first.</td></tr>
+<tr><th>Export DDS</th><td>Save the current document with the saved export settings.</td></tr>
+<tr><th>Export DDS as...</th><td>Choose export settings for this file; <i>Remember these settings</i> makes them default.</td></tr>
+<tr><th>DDS Evrika Settings</th><td>Default export options, encoder, paths to tools, language.</td></tr>
+</table>
 
-            <h3>Importing DDS Files with Custom Format</h3>
-            <p>The plugin allows importing DDS files and converting them to other formats directly.</p>
-            <ol>
-                <li>Go to <strong>Tools > Scripts > Import DDS as...</strong>.</li>
-                <li>Select the conversion format in the dialog (e.g., PNG, TIFF, BMP).</li>
-                <li>The selected format will be applied for the conversion process.</li>
-            </ol>
+<h3>Export options</h3>
+<table>
+<tr><th>Compression</th><td>BC1/DXT1, BC2/DXT3, BC3/DXT5, BC4, BC5, BC7 or uncompressed RGBA8.
+BC2&ndash;BC7 need Cuttlefish.</td></tr>
+<tr><th>Color space</th><td><b>sRGB</b> for color textures: <code>*_SRGB</code> format, mipmaps averaged in linear light.<br>
+<b>Linear</b> for normal maps, masks and other data: <code>*_UNORM</code> format, values written unchanged.</td></tr>
+<tr><th>Mipmaps</th><td>Full chain down to 1&times;1, no mipmaps, or 1&ndash;12 extra levels. Any image size works.</td></tr>
+<tr><th>Mipmap filter</th><td>Resampling filter for mip levels. Cuttlefish uses the closest of box, linear, cubic, b-spline, catmull-rom.</td></tr>
+<tr><th>Quality</th><td>Fast, Normal or Best. Best is slow for BC7.</td></tr>
+</table>
+<p>Recommended: color with alpha &rarr; BC7 sRGB; normal map &rarr; BC5 linear; single channel mask &rarr; BC4 linear.</p>
 
-            <h3>Exporting DDS Files</h3>
-            <p>Exporting is straightforward with options for selecting compression, mipmap levels, and filters:</p>
-            <ol>
-                <li>Navigate to <strong>Tools > Scripts > Export DDS</strong>.</li>
-                <li>Select the compression type (DXT1, DXT3, DXT5, BC7) and set the Mipmap levels (Auto, 1-5).</li>
-                <li>Select a filter option (Lanczos, Box, Triangle, Mitchell, or Catmull-Rom)</li>
-                <li>Export the file using the DDS format.</li>
-            </ol>
+<h3>External tools</h3>
+<ul>
+<li><b>Cuttlefish</b> writes all formats and the sRGB flag. Included in the release archives for Windows, Linux and macOS.</li>
+<li><b>ImageMagick</b> opens DDS files and can export DXT1, DXT5 and uncompressed. Included in the Windows archive;
+on Linux install it with the package manager (<code>apt install imagemagick</code>), on macOS with <code>brew install imagemagick</code>.</li>
+</ul>
+<p>The settings dialog shows which tools were found and lets you set their paths manually.</p>
 
-            <h3>Exporting DDS Files with Custom Settings</h3>
-            <p>If you need full control over the export process:</p>
-            <ol>
-                <li>Use <strong>Tools > Scripts > Export DDS as...</strong>.</li>
-                <li>Select custom compression settings (DXT1, DXT3, DXT5, BC7, or None).</li>
-                <li>Adjust Mipmap levels and filter settings.</li>
-                <li>Export the file with the desired DDS settings.</li>
-            </ol>
-        </section>
+<h3>Troubleshooting</h3>
+<ul>
+<li><i>ImageMagick was not found</i> &ndash; install it or set the path to <code>magick</code> in DDS Evrika Settings.</li>
+<li><i>ImageMagick cannot write BC7/BC2/BC4/BC5</i> &ndash; use Cuttlefish (encoder: Automatic) or pick DXT1/DXT5.</li>
+<li><i>macOS blocks cuttlefish</i> &ndash; run
+<code>xattr -dr com.apple.quarantine ~/Library/Application\ Support/krita/pykrita/dds_evrika_plugin/resources</code>.</li>
+</ul>
+<p>More details: <a href="https://github.com/Sepera-okeq/DDS-Evrika-Plugin">github.com/Sepera-okeq/DDS-Evrika-Plugin</a></p>
 
-        <section id="settings">
-            <h2>Plugin Settings</h2>
-            <p>The DDS Evrika Plugin allows saving custom settings, simplifying the import/export process. Access the
-               settings dialog by navigating to:</p>
-            <ol>
-                <li><strong>Tools > Scripts > Evrika Settings</strong></li>
-                <li>Adjust the plugin to use the original filenames during import/export.</li>
-                <li>Customize export file names, filters, and formats based on your preferences.</li>
-                <li>Configure default import/export formats for quicker conversions.</li>
-            </ol>
-        </section>
+<hr>
 
-        <section id="troubleshooting">
-            <h2>Troubleshooting</h2>
-            <p>In case any issues arise:</p>
-            <ul>
-                <li>Ensure that <strong>ImageMagick</strong> is installed properly and the <code>magick</code> command
-                    works on your system.</li>
-                <li>Double-check if the plugin was copied into the correct directory.</li>
-                <li>If Krita crashes or hangs during conversion, verify the file size and available system memory.</li>
-                <li>If MipMap or filter issues occur during export, try tweaking the mipmap level or filter setting for better compatibility.</li>
-            </ul>
-        </section>
+<h2 id="ru"><a name="ru"></a>Русский</h2>
 
-        <section id="support">
-            <h2>Support</h2>
-            <p>For further assistance, please visit the official <a href="https://krita.org/en/help/">Krita support
-                    page</a> or contact the plugin's developer via <em>support@example.com</em>.</p>
-        </section>
-    </main>
+<p>Импорт и экспорт текстур DirectDraw Surface (<code>.dds</code>): сжатие BC1&ndash;BC7,
+цветовое пространство sRGB или linear, mipmap для текстур любого размера. Работает в Krita 5 и Krita 6.</p>
 
-    <footer>
-        <p>&copy; 2024 DDS Evrika Plugin - by sepera_okeq </p>
-    </footer>
+<h3>Команды</h3>
+<p>Все команды находятся в <b>Инструменты &gt; Сценарии</b>.</p>
+<table>
+<tr><th>Импортировать DDS</th><td>Открыть DDS как новый документ.</td></tr>
+<tr><th>Импортировать DDS как...</th><td>Сначала выбрать промежуточный формат (PNG, TIFF, BMP, JPEG, TGA).</td></tr>
+<tr><th>Экспортировать DDS</th><td>Сохранить текущий документ с сохранёнными настройками экспорта.</td></tr>
+<tr><th>Экспортировать DDS как...</th><td>Выбрать настройки для этого файла; <i>Запомнить эти настройки</i> делает их настройками по умолчанию.</td></tr>
+<tr><th>Настройки DDS Evrika</th><td>Параметры экспорта по умолчанию, кодировщик, пути к программам, язык.</td></tr>
+</table>
+
+<h3>Параметры экспорта</h3>
+<table>
+<tr><th>Формат сжатия</th><td>BC1/DXT1, BC2/DXT3, BC3/DXT5, BC4, BC5, BC7 или без сжатия RGBA8.
+BC2&ndash;BC7 требуют Cuttlefish.</td></tr>
+<tr><th>Цветовое пространство</th><td><b>sRGB</b> для цветных текстур: формат <code>*_SRGB</code>, mipmap усредняются в линейном свете.<br>
+<b>Linear</b> для нормалей, масок и других данных: формат <code>*_UNORM</code>, значения записываются без изменений.</td></tr>
+<tr><th>Mipmap-уровни</th><td>Полная цепочка до 1&times;1, без mipmap или 1&ndash;12 дополнительных уровней. Подходит любой размер.</td></tr>
+<tr><th>Фильтр mipmap</th><td>Фильтр уменьшения для уровней. Cuttlefish берёт ближайший из box, linear, cubic, b-spline, catmull-rom.</td></tr>
+<tr><th>Качество</th><td>Быстро, Нормально или Максимум. Максимум для BC7 работает медленно.</td></tr>
+</table>
+<p>Рекомендации: цвет с альфой &rarr; BC7 sRGB; карта нормалей &rarr; BC5 linear; одноканальная маска &rarr; BC4 linear.</p>
+
+<h3>Внешние программы</h3>
+<ul>
+<li><b>Cuttlefish</b> записывает все форматы и флаг sRGB. Входит в архивы релиза для Windows, Linux и macOS.</li>
+<li><b>ImageMagick</b> открывает DDS и умеет экспортировать DXT1, DXT5 и без сжатия. Входит в архив для Windows;
+на Linux установите его пакетным менеджером (<code>apt install imagemagick</code>), на macOS &ndash; <code>brew install imagemagick</code>.</li>
+</ul>
+<p>В окне настроек видно, какие программы найдены, и можно указать пути вручную.</p>
+
+<h3>Решение проблем</h3>
+<ul>
+<li><i>ImageMagick не найден</i> &ndash; установите его или укажите путь к <code>magick</code> в настройках DDS Evrika.</li>
+<li><i>ImageMagick не умеет записывать BC7/BC2/BC4/BC5</i> &ndash; используйте Cuttlefish (кодировщик: Автоматически) или выберите DXT1/DXT5.</li>
+<li><i>macOS блокирует cuttlefish</i> &ndash; выполните
+<code>xattr -dr com.apple.quarantine ~/Library/Application\ Support/krita/pykrita/dds_evrika_plugin/resources</code>.</li>
+</ul>
+<p>Подробнее: <a href="https://github.com/Sepera-okeq/DDS-Evrika-Plugin">github.com/Sepera-okeq/DDS-Evrika-Plugin</a></p>
 
 </body>
-
 </html>

@@ -1,173 +1,207 @@
-# DDSEvrikaPlugin for Krita
+# DDS Evrika Plugin for Krita
 
-## Overview
+[![Build](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/actions/workflows/release.yml/badge.svg)](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/actions/workflows/release.yml)
+[![Release](https://img.shields.io/github/v/release/Sepera-okeq/DDS-Evrika-Plugin)](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest)
+![Krita](https://img.shields.io/badge/Krita-5.x%20%7C%206.x-3babff)
+![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-**DDSEvrikaPlugin** is a plugin for Krita that allows users to import and export DDS (DirectDraw Surface) files with advanced compression, mipmap, and filter options. The plugin relies on the power of ImageMagick to handle image format conversions and compressions, making it an ideal tool for texture creation and optimization in video games and 3D rendering environments.
+**English** | [Русский](README.ru.md)
 
-With **DDSEvrikaPlugin**, you can:
+Open and save DirectDraw Surface (`.dds`) textures directly from Krita: BC1–BC7 compression,
+sRGB or linear color space, mipmaps for any texture size.
 
-- Import DDS files into Krita and convert them to editable formats.
-- Export Krita documents using various DDS compression formats, including `dxt1`, `dxt3`, `dxt5`, `bc7`, and more.
-- Customize export settings such as DDS compression type, mipmap levels, filter options, and file naming configuration.
+## Contents
 
-## What's New in Version 1.2
-
-- Added **filter support** during DDS export (available filters: Lanczos, Box, Triangle, Mitchell, and Catmull-Rom), enhancing the control over image resizing and quality.
-- Improved **transparency handling**: Added guidelines for selecting an appropriate compression format (such as **DXT5**) to better handle textures with transparency or alpha channels.
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Export options](#export-options)
+- [Encoders](#encoders)
+- [Troubleshooting](#troubleshooting)
+- [Building from source](#building-from-source)
+- [Adding a translation](#adding-a-translation)
+- [License](#license)
 
 ## Features
 
-1. **Import DDS**:
-   - Directly import DDS textures into Krita.
-   - Convert DDS files into formats such as PNG, TIFF, BMP, and others.
-
-2. **Export DDS**:
-   - Export images from Krita in DDS format using various compression options.
-   - Choose advanced DDS compression formats: `dxt1`, `dxt3`, `dxt5`, `bc7`, or disable compression entirely with `none`.
-   - Easily control mipmap levels for better texture resolution handling.
-   - Apply filters like **Lanczos**, **Box**, **Mitchell**, among others, to control the image export quality.
-
-3. **Settings Flexibility**:
-   - Customize DDS file naming options (retain original names or create custom names).
-   - Automatically save and reuse your preferred import/export settings for faster workflows.
-
-4. **Improved Transparency Handling**:
-   - When dealing with semi-transparent images, use **DXT5** compression to preserve smooth transitions in transparency.
-
-5. **ImageMagick Integration**:
-   - Leverage ImageMagick for robust image format conversions and compression processes.
-  
-6. **Localization Support**:
-    - English
-    - Russian
+- **Import** DDS (DXT1–5, BC4, BC5, BC7, uncompressed, including `*_SRGB` variants) as a new Krita document.
+- **Export** to BC1/DXT1, BC2/DXT3, BC3/DXT5, BC4, BC5, BC7 or uncompressed RGBA8.
+- **sRGB or linear** output: `BC7_UNORM_SRGB` for color maps, `BC7_UNORM` for normal maps, masks and other data.
+- **Mipmaps for any size**, not only power-of-two: full chain, none, or a fixed number of levels.
+  In sRGB mode they are averaged in linear light, so they do not get darker.
+- **Compression quality**: fast, normal, best.
+- **Krita 5 (Qt5) and Krita 6 (Qt6)**.
+- **Windows, Linux, macOS** (Intel and Apple Silicon); release archives include the tools they need.
+- **Localized UI**: English and Russian, follows Krita's language, easy to extend.
 
 ## Installation
 
-### Step 1: Download the Plugin
+1. Download the archive for your system from the [latest release](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest):
 
-- Download the latest plugin version from [the official release page](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest).
+   | System | Archive | Included tools |
+   |---|---|---|
+   | Windows 10/11 x64 | `win-x64-dds_evrika_plugin-<version>.zip` | Cuttlefish, ImageMagick |
+   | Linux x64 | `linux-x64-dds_evrika_plugin-<version>.zip` | Cuttlefish |
+   | macOS 11+ (Intel and Apple Silicon) | `macos-universal-dds_evrika_plugin-<version>.zip` | Cuttlefish |
+   | Anything else | `any-noarch-dds_evrika_plugin-<version>.zip` | none |
 
-### Step 2: Install Plugin
+2. In Krita open **Tools → Scripts → Import Python Plugin from File...** and pick the archive.
+   Do not unpack it.
+3. Restart Krita. Make sure the plugin is enabled in
+   **Settings → Configure Krita → Python Plugin Manager → DDS Evrika Plugin**.
 
-- Open [Krita](https://krita.org/) and go to Tools > Scripts > Import Python Plugins..., and select the zip archive. Confirm that you want to enable it.
+### ImageMagick on Linux and macOS
 
-### Step 3: Restart Krita
+Opening DDS files needs ImageMagick (export works without it thanks to Cuttlefish):
 
-- Restart Krita to activate the plugin.
+```sh
+# macOS (Homebrew, native on Apple Silicon)
+brew install imagemagick
 
-### Step 4: Enable the Plugin
+# Debian / Ubuntu
+sudo apt install imagemagick
 
-- After restart, go to `Tools -> Scripts -> DDSEvrikaPlugin` to ensure that the plugin is available.
+# Fedora
+sudo dnf install ImageMagick
 
-## Alternative Installation
+# Arch
+sudo pacman -S imagemagick
+```
 
-### Step 1: Without ImageMagick included in the archive
+The plugin finds Homebrew and MacPorts installations even though Krita on macOS does not see your shell `PATH`.
+You can also set the path manually in **DDS Evrika Settings**.
 
-- Download the latest plugin version from [the official release page](https://github.com/Sepera-okeq/DDS-Evrika-Plugin/releases/latest).
+### Manual installation
 
-### Step 2: Locate Krita's Plugin Folder
+Unpack the archive into Krita's resource folder
+(**Settings → Manage Resources → Open Resource Folder**), `pykrita` subfolder:
 
-- Extract the plugin into the appropriate folder depending on your operating system:
-  - **Windows**: `C:\Users\<YourUser>\AppData\Roaming\krita\pykrita\`
-  - **Linux**: `~/.local/share/krita/pykrita/`
-  - **MacOS**: `~/Library/Application Support/krita/pykrita/`
+| System | Folder |
+|---|---|
+| Windows | `%APPDATA%\krita\pykrita\` |
+| Linux | `~/.local/share/krita/pykrita/` |
+| macOS | `~/Library/Application Support/krita/pykrita/` |
 
-### Step 3: Install ImageMagick
+You should get `pykrita/dds_evrika_plugin.desktop` and `pykrita/dds_evrika_plugin/`.
 
-- Ensure ImageMagick is installed and the `magick` executable is accessible.
-  - On **Windows**, place `magick.exe` in the `resources` folder inside the plugin.
-  - On **Linux** and **MacOS**, ImageMagick should be globally installed via a package manager.
+## Usage
 
-### Step 4: Restart Krita
+All commands are in **Tools → Scripts**:
 
-- Restart Krita to activate the plugin.
+| Command | What it does |
+|---|---|
+| **Import DDS** | Opens a DDS file as a new document using the saved intermediate format. |
+| **Import DDS as...** | Same, but asks for the intermediate format (PNG, TIFF, BMP, JPEG, TGA). |
+| **Export DDS** | Saves the current document with the saved export settings. |
+| **Export DDS as...** | Asks for the export settings first; tick *Remember these settings* to make them default. |
+| **DDS Evrika Settings** | Default export options, encoder, tool paths, language. |
 
-### Step 5: Enable the Plugin
+Export never changes the document's file name: the image is flattened into a temporary PNG, converted and the PNG is deleted.
 
-- After restart, go to `Tools -> Scripts -> DDSEvrikaPlugin` to verify that the plugin is available in the Krita interface.
+## Export options
 
-## Usage Guide
+| Option | Values | Notes |
+|---|---|---|
+| Compression format | BC1/DXT1, BC2/DXT3, BC3/DXT5, BC4, BC5, BC7, uncompressed | BC2–BC7 need Cuttlefish. |
+| Color space | sRGB, Linear | See below. |
+| Mipmaps | Full chain, none, 1–12 extra levels | Works for any size, e.g. 1000×600. |
+| Mipmap filter | Lanczos, Box, Triangle, Catrom, Mitchell, ... | Cuttlefish maps it to the closest of box / linear / cubic / b-spline / catmull-rom. |
+| Compression quality | Fast, Normal, Best | Best is noticeably slower for BC7. |
 
-### Import DDS Files
+**sRGB vs linear.** Use *sRGB* for color textures (albedo, UI, sprites): the file gets an `*_SRGB` format
+and mipmaps are computed in linear light. Use *Linear* for data textures (normal, roughness, metallic, masks):
+the file gets a `*_UNORM` format and pixel values are written unchanged. In both modes the pixel values
+of the main image are exactly the ones you see in Krita; the option only changes how the GPU interprets them
+and how mipmaps are filtered.
 
-1. Navigate to `Tools -> Scripts -> Import DDS`.
-2. Select the DDS file you want to convert.
-3. Choose your preferred format (PNG, BMP, TIFF, etc.) for conversion.
-4. The imported image will be editable in a new Krita document.
+Which formats to choose:
 
-### Export DDS Files
+- color with smooth alpha → **BC7** (or BC3/DXT5 for old engines);
+- color without alpha → **BC7** or BC1/DXT1;
+- normal map → **BC5**, linear;
+- single channel mask → **BC4**, linear.
 
-1. Navigate to `Tools -> Scripts -> Export to DDS`.
-2. Select the desired DDS compression format and mipmap level.
-3. Choose a filter (such as **Lanczos**, **Box**, or **Mitchell**) for optimal quality.
-4. The exported `.dds` file will be saved to your chosen directory.
+## Encoders
 
-### Import/Export with Advanced Settings
+| | Cuttlefish | ImageMagick |
+|---|---|---|
+| Formats | BC1–BC7, RGBA8 | DXT1, DXT5, RGBA8 |
+| sRGB flag in the file | yes (DX10 header) | no (legacy header) |
+| Quality levels | yes | best = cluster fit |
+| Used for import | no | yes |
 
-1. Use the `Import DDS as...` or `Export DDS as...` options to customize the format, compression, mipmap levels, and adjust file names.
-2. Control export settings directly from the settings dialog via `Tools -> Scripts -> Evrika Settings`.
+With **Automatic** (default) the plugin uses Cuttlefish when it is available and falls back to ImageMagick.
+If ImageMagick is selected and the format is not supported, you get an error instead of a silently different file.
 
-## Plugin Settings
+## Troubleshooting
 
-- **Compression Formats**: Choose from `dxt1`, `dxt3`, `dxt5`, `bc7`, or none.
-- **Mipmap Levels**: Choose automatic mipmap detection or select levels 1-5.
-- **Image Filters**: Apply filters (Lanczos, Box, Mitchell, Catmull-Rom, Triangle) during the export process to manage image resizing quality.
-- **File Naming**: Options to use original file names or generate custom names. Supports specifying custom export names.
+**"ImageMagick was not found"** — install ImageMagick (see above) or set the path to `magick`
+in **DDS Evrika Settings**. The dialog shows which tools were detected.
 
-## Requirements
+**macOS: "cuttlefish cannot be opened because the developer cannot be verified"** — remove the quarantine flag:
 
-- **Krita 4.2+**: Ensure you have Krita version 4.2 or higher.
-- **ImageMagick**: Installed and configured in your system's PATH. Use the provided `magick.exe` for Windows systems, or install ImageMagick globally on Linux and macOS (`apt`/`brew`).
+```sh
+xattr -dr com.apple.quarantine ~/Library/Application\ Support/krita/pykrita/dds_evrika_plugin/resources
+```
 
-## Known Issues with Transparency
+**The file has no mipmaps** — check that *Mipmaps* is not set to *No mipmaps*. Versions before 1.3 created mipmaps
+only for power-of-two images; this is fixed.
 
-For images containing transparency or semi-transparent areas, it is recommended to use the **DXT5** compression format. **DXT1**, while efficient, supports only binary transparency, leading to the loss of partial transparency. If this compression format is selected in conjunction with filters like **Lanczos**, it may blend and remove transparency, so use **DXT5** to preserve a smooth transition.
+**BC7 looked like DXT5 / colors looked washed out** — before 1.3 ImageMagick silently wrote DXT5 instead
+of BC7/DXT3 and could not mark files as sRGB. Use Cuttlefish (included in the release archives).
 
-## Support & Troubleshooting
+**Grayscale documents** — Cuttlefish cannot read grayscale images, the plugin converts them to RGB through
+ImageMagick. Without ImageMagick convert the document to RGB first (**Image → Convert Image Color Space**).
 
-### Common issues
+## Building from source
 
-1. **Issue: ImageMagick not found**
-   - Ensure `magick` is installed and its location is in your **PATH**.
-   - For Windows, verify `magick.exe` is in the `resources` folder of the plugin.
+```sh
+git clone https://github.com/Sepera-okeq/DDS-Evrika-Plugin
+cd DDS-Evrika-Plugin
+python3 tools/build_release.py                    # all archives into ./dist
+python3 tools/build_release.py --platform macos   # only one
+```
 
-2. **Issue: DDS export fails**
-   - Ensure the output file has the correct `.dds` extension.
-   - Verify that the DDS compression format is supported by ImageMagick.
-   - If you are working with transparency, make sure you're using **DXT5** to preserve the alpha channel.
+The script downloads Cuttlefish (and portable ImageMagick for Windows) from their GitHub releases.
+The Windows archive needs the `7z` command. Pinned versions can be changed with the
+`CUTTLEFISH_VERSION` and `IMAGEMAGICK_VERSION` environment variables.
 
-3. **Krita crashes or the plugin doesn't appear**
-   - Ensure the plugin is unzipped in the correct `pykrita` folder. Restart Krita after installation.
+**macOS on Apple Silicon.** The official Cuttlefish build is universal (x86_64 + arm64), so the
+`macos-universal` archive runs natively; ImageMagick from Homebrew is native as well. Nothing has to be rebuilt.
+To use your own Cuttlefish build, compile it following its [README](https://github.com/akb825/Cuttlefish#building)
+and put `bin/cuttlefish` with the `lib` folder into `dds_evrika_plugin/resources/cuttlefish/`
+or set the path in the settings.
 
-## Development
+**Releases** are built by [GitHub Actions](.github/workflows/release.yml) on every push; pushing a tag `vX.Y.Z`
+that matches `VERSION` in `dds_evrika_plugin.py` publishes a GitHub release with all archives.
 
-### Step 1: Clone the repository
+### Project layout
 
-- Clone the project: `git clone https://github.com/Sepera-okeq/DDS-Evrika-Plugin`
+```
+DDS_EVRIKA_PLUGIN/
+├── dds_evrika_plugin.desktop   Krita plugin descriptor
+└── dds_evrika_plugin/
+    ├── __init__.py             registers the extension
+    ├── dds_evrika_plugin.py    Krita UI: actions, dialogs, settings (PyQt5/PyQt6)
+    ├── dds_tools.py            tool discovery, DDS import/export (no Krita dependency)
+    ├── i18n.py                 localization loader
+    ├── locales/*.json          translations
+    ├── Manual.html             manual shown in Krita's Python Plugin Manager
+    └── resources/              bundled tools (filled by the build script)
+tools/build_release.py          builds the release archives
+```
 
-### Step 2: Install dependencies
+## Adding a translation
 
-- Install ImageMagick from the [official website](https://imagemagick.org/script/download.php) or via a package manager.
-- Drop `magick.exe` in the `resources` folder (Windows).
+1. Copy `DDS_EVRIKA_PLUGIN/dds_evrika_plugin/locales/en.json` to `<code>.json`, e.g. `de.json` or `pt_BR.json`.
+2. Translate the values, keep the keys and `{placeholders}` unchanged, set `_language_name`.
+3. Open a pull request. Missing keys fall back to English, CI reports them.
 
-### Step 3: Start developing
-
-- Make your changes and test the plugin within Krita.
-
-## Contributing
-
-1. Fork the repository.
-2. Create a new branch: `git checkout -b feature-xyz`.
-3. Commit your changes: `git commit -m "feat: Add new feature"`.
-4. Push your branch: `git push origin feature-xyz`.
-5. Open a pull request on GitHub.
+The language follows Krita's *Settings → Switch Application Language* and can be overridden in **DDS Evrika Settings**.
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
-
-## Credits
-
-- **PyQt5**: Python bindings for cross-platform GUIs.
-- **ImageMagick**: Handling image conversions and compressions.
-- **Krita**: An open-source painting software.
+[MIT](LICENSE). Release archives also contain third-party tools under their own licenses, the license files are
+included next to them: [Cuttlefish](https://github.com/akb825/Cuttlefish) (Apache 2.0) with PVRTexLib
+(Imagination Technologies) and, on Windows, [ImageMagick](https://imagemagick.org) (ImageMagick License).
